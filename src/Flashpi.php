@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Flashpi;
 
 use Flashpi\Exception\FlashpiException;
+use Flashpi\Exception\WebhookVerificationException;
 use Flashpi\Internal\ClientConfig;
 use Flashpi\Internal\Engine;
 use Flashpi\Internal\Validate;
@@ -27,6 +28,8 @@ use GuzzleHttp\ClientInterface;
  * shows it: not in var_dump(), print_r(), var_export(), exceptions or stack traces.
  *
  * @phpstan-import-type Language from SdkTypes
+ * @phpstan-import-type WebhookEvent from SdkTypes
+ * @phpstan-import-type WebhookHeaders from SdkTypes
  */
 final class Flashpi
 {
@@ -46,6 +49,9 @@ final class Flashpi
      * @var 'test'|'live'
      */
     public readonly string $environment;
+
+    /** Verify the signature of the webhooks you receive (no API key needed). */
+    public readonly Webhooks $webhooks;
 
     private readonly Engine $engine;
 
@@ -93,6 +99,49 @@ final class Flashpi
         );
         $this->environment = $config->environment();
         $this->engine = new Engine($config, $httpClient ?? new Client(['allow_redirects' => false, 'http_errors' => false]));
+        $this->webhooks = new Webhooks();
+    }
+
+    /**
+     * Verifies a webhook and returns its decoded body: see Webhooks::unwrap().
+     *
+     * @param string|\Stringable $payload
+     * @param WebhookHeaders $headers
+     * @param string $secret
+     *
+     * @return WebhookEvent
+     *
+     * @throws WebhookVerificationException
+     */
+    public static function unwrapWebhook(
+        mixed $payload,
+        iterable $headers,
+        #[\SensitiveParameter]
+        mixed $secret,
+        int|float|null $tolerance = null,
+        \DateTimeInterface|int|float|null $now = null,
+    ): array {
+        return (new Webhooks())->unwrap($payload, $headers, $secret, $tolerance, $now);
+    }
+
+    /**
+     * Checks that a webhook comes from Flashpi and is recent: see Webhooks::verifySignature().
+     *
+     * @param string|\Stringable $payload
+     * @param WebhookHeaders $headers
+     * @param string $secret
+     *
+     * @throws WebhookVerificationException
+     */
+    public static function verifyWebhookSignature(
+        mixed $payload,
+        iterable $headers,
+        #[\SensitiveParameter]
+        mixed $secret,
+        int|float|null $tolerance = null,
+        \DateTimeInterface|int|float|null $now = null,
+    ): void {
+        (new Webhooks())->verifySignature($payload, $headers, $secret, $tolerance, $now);
     }
 
     /**
