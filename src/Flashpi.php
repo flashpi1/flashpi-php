@@ -19,6 +19,7 @@ use Flashpi\Resources\Issuers;
 use Flashpi\Resources\PurchaseSettlements;
 use Flashpi\Resources\StatusResource;
 use Flashpi\Resources\Waybills;
+use Flashpi\Resources\WebhookEndpoints;
 use Flashpi\Resources\Withholdings;
 use Flashpi\Types\SdkTypes;
 use GuzzleHttp\Client;
@@ -91,6 +92,12 @@ final class Flashpi
     /** Creates an issuer from its .p12 certificate. */
     public readonly IssuerOnboardings $issuerOnboardings;
 
+    /**
+     * The URLs Flashpi sends events to, with their deliveries. To check the signature of a
+     * webhook you receive, use `webhooks` instead.
+     */
+    public readonly WebhookEndpoints $webhookEndpoints;
+
     /** Events: what happened to documents, certificates and email sending. */
     public readonly Events $events;
 
@@ -155,6 +162,7 @@ final class Flashpi
         $this->documents = new Documents($this->engine);
         $this->issuers = new Issuers($this->engine);
         $this->issuerOnboardings = new IssuerOnboardings($this->engine);
+        $this->webhookEndpoints = new WebhookEndpoints($this->engine);
         $this->events = new Events($this->engine);
         $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();
