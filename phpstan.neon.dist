@@ -2,7 +2,8 @@
 #
 # Besides `level: max`:
 # - bleedingEdge makes array shapes sealed: an array with a key the shape does not declare (a typo
-#   in a request body) is an error, as a TypedDict or a TypeScript object literal would be.
+#   in a request body) is an error, as a TypedDict or a TypeScript object literal would be. The
+#   consumer files in tests/Types/ rely on it.
 # - treatPhpDocTypesAsCertain is off: the SDK checks at run time what callers pass (options,
 #   headers, webhook payloads) even where its PHPDoc already narrows the type, since PHP does not
 #   enforce PHPDoc types.
@@ -18,6 +19,9 @@ parameters:
     - src
     - tests
     - scripts
+  excludePaths:
+    # Code that must fail analysis: tests/Types/ConsumerTypesTest.php checks its errors.
+    - tests/Types/Fixtures/Invalid
   tmpDir: .phpstan.cache
   # PHPUnit builds a test's state in setUp(), not in its constructor.
   additionalConstructors:
