@@ -49,5 +49,17 @@
     "sort-packages": true
   },
   "minimum-stability": "stable",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "scripts": {
+    "analyse": "phpstan analyse --memory-limit=1G",
+    "cs": "php-cs-fixer check --diff",
+    "cs:fix": "php-cs-fixer fix",
+    "test": "phpunit"
+  },
+  "scripts-descriptions": {
+    "analyse": "Runs PHPStan at the highest level.",
+    "cs": "Checks the code style (PER-CS 2.0).",
+    "cs:fix": "Fixes the code style.",
+    "test": "Runs the tests."
+  }
 }

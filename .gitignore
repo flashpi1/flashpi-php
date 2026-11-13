@@ -6,6 +6,7 @@
 # Tool caches
 /.phpunit.cache/
 /.php-cs-fixer.cache
+/.phpstan.cache/
 /build/
 /coverage/
 
