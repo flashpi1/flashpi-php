@@ -58,7 +58,8 @@
     "openapi:check": "@php scripts/openapi.php check",
     "openapi:generate": "@php scripts/openapi.php generate",
     "openapi:sync": "@php scripts/openapi.php sync",
-    "test": "phpunit"
+    "test": "phpunit",
+    "test:live": "phpunit --group live"
   },
   "scripts-descriptions": {
     "analyse": "Runs PHPStan at the highest level.",
@@ -67,6 +68,7 @@
     "openapi:check": "Fails when src/Types/ApiTypes.php does not match openapi/openapi.json.",
     "openapi:generate": "Regenerates src/Types/ApiTypes.php from openapi/openapi.json.",
     "openapi:sync": "Downloads the public OpenAPI document, then regenerates the types.",
-    "test": "Runs the tests."
+    "test": "Runs the tests.",
+    "test:live": "Runs tests/Live against the real API in test mode (needs FLASHPI_TEST_API_KEY and FLASHPI_DEMO_ISSUER_ID)."
   }
 }

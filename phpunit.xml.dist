@@ -33,6 +33,13 @@
     </testsuite>
   </testsuites>
 
+  <!-- tests/Live runs against the real API only when asked for: composer test:live. -->
+  <groups>
+    <exclude>
+      <group>live</group>
+    </exclude>
+  </groups>
+
   <source ignoreIndirectDeprecations="true">
     <include>
       <directory>src</directory>
