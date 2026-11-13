@@ -11,6 +11,7 @@ use Flashpi\Internal\Engine;
 use Flashpi\Internal\Validate;
 use Flashpi\Resources\CreditNotes;
 use Flashpi\Resources\DebitNotes;
+use Flashpi\Resources\Documents;
 use Flashpi\Resources\Events;
 use Flashpi\Resources\Invoices;
 use Flashpi\Resources\PurchaseSettlements;
@@ -76,6 +77,9 @@ final class Flashpi
     /** Withholding receipts (comprobantes de retención). */
     public readonly Withholdings $withholdings;
 
+    /** Every issued document, of any type: search, XML, RIDE (PDF) and email. */
+    public readonly Documents $documents;
+
     /** Events: what happened to documents, certificates and email sending. */
     public readonly Events $events;
 
@@ -137,6 +141,7 @@ final class Flashpi
         $this->purchaseSettlements = new PurchaseSettlements($this->engine);
         $this->waybills = new Waybills($this->engine);
         $this->withholdings = new Withholdings($this->engine);
+        $this->documents = new Documents($this->engine);
         $this->events = new Events($this->engine);
         $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();
