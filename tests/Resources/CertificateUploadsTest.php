@@ -72,6 +72,14 @@ final class CertificateUploadsTest extends TestCase
         );
     }
 
+    public function testReturnsTheResponseWithWithResponse(): void
+    {
+        $api = self::api([Replies::json(['id' => self::CERTIFICATE, 'status' => 'processing'], 202, ['X-Request-Id' => 'req_upload'])]);
+        $result = $api->client->issuers->certificates->withResponse()->upload(self::ISSUER, ['file' => self::P12, 'password' => 'x']);
+        self::assertSame([self::CERTIFICATE, 202, 'req_upload'], [$result->data['id'], $result->response->getStatusCode(), $result->requestId]);
+        self::assertSame(self::P12, Forms::upload($api->request(0))[1][3] ?? null);
+    }
+
     /**
      * @return iterable<string, array{\Closure(self): mixed}>
      */
