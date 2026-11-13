@@ -8,6 +8,7 @@ use Flashpi\ApiResponse;
 use Flashpi\Exception\FlashpiException;
 use Flashpi\Flashpi;
 use Flashpi\Internal\Engine;
+use Flashpi\Resources\Invoices;
 use Flashpi\Tests\Support\Forms;
 use Flashpi\Tests\Support\MockApi;
 use Flashpi\Tests\Support\Replies;
@@ -189,6 +190,29 @@ final class ClientTest extends TestCase
         self::assertStringNotContainsString(Replies::TEST_KEY, var_export($client, true));
         $this->expectException(\Exception::class);
         serialize($client);
+    }
+
+    public function testNeverShowsTheKeyInItsResourcesOrTheirViews(): void
+    {
+        $client = new Flashpi(Replies::TEST_KEY);
+        $objects = [
+            $client->invoices,
+            $client->invoices->withResponse(),
+            $client->documents,
+            $client->issuers,
+            $client->issuers->establishments->emissionPoints,
+            $client->issuers->certificates->withResponse(),
+            $client->issuerOnboardings,
+            $client->webhookEndpoints->deliveries->withResponse(),
+            $client->events,
+            $client->status,
+        ];
+        foreach ($objects as $object) {
+            self::assertFalse(Secrets::inDumps($object, Replies::TEST_KEY), $object::class);
+            self::assertStringNotContainsString(Replies::TEST_KEY, var_export($object, true));
+        }
+        self::assertSame([], $client->issuers->__debugInfo());
+        self::assertSame(['resource' => Invoices::class], $client->invoices->withResponse()->__debugInfo());
     }
 
     public function testDoesNotFollowRedirectsWithItsOwnHttpClient(): void
