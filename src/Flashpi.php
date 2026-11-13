@@ -9,6 +9,8 @@ use Flashpi\Exception\WebhookVerificationException;
 use Flashpi\Internal\ClientConfig;
 use Flashpi\Internal\Engine;
 use Flashpi\Internal\Validate;
+use Flashpi\Resources\Events;
+use Flashpi\Resources\StatusResource;
 use Flashpi\Types\SdkTypes;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
@@ -49,6 +51,12 @@ final class Flashpi
      * @var 'test'|'live'
      */
     public readonly string $environment;
+
+    /** Events: what happened to documents, certificates and email sending. */
+    public readonly Events $events;
+
+    /** The API's own status. */
+    public readonly StatusResource $status;
 
     /** Verify the signature of the webhooks you receive (no API key needed). */
     public readonly Webhooks $webhooks;
@@ -99,6 +107,8 @@ final class Flashpi
         );
         $this->environment = $config->environment();
         $this->engine = new Engine($config, $httpClient ?? new Client(['allow_redirects' => false, 'http_errors' => false]));
+        $this->events = new Events($this->engine);
+        $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();
     }
 
