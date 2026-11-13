@@ -8,6 +8,7 @@ use Flashpi\ApiResponse;
 use Flashpi\Exception\FlashpiException;
 use Flashpi\Flashpi;
 use Flashpi\Internal\Engine;
+use Flashpi\Tests\Support\Forms;
 use Flashpi\Tests\Support\MockApi;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\Secrets;
@@ -437,36 +438,12 @@ final class ClientTest extends TestCase
         $api->things->upload($content, 'secret ñ', ['extraHeaders' => ['content-type' => 'text/plain']]);
         self::assertCount(2, $api->sent);
         foreach ($api->sent as $request) {
-            $type = $request->getHeaderLine('content-type');
-            self::assertMatchesRegularExpression('/^multipart\/form-data; boundary="?([^"]+)"?$/', $type);
-            $boundary = (string) preg_replace('/^multipart\/form-data; boundary="?([^"]+)"?$/', '$1', $type);
-            $parts = self::parts((string) $request->getBody(), $boundary);
+            $parts = Forms::parts($request);
             self::assertSame(['form-data; name="password"', 'form-data; name="file"; filename="certificate.p12"'], array_column($parts, 'disposition'));
             self::assertSame(['secret ñ', $content], array_column($parts, 'body'));
             self::assertSame('application/x-pkcs12', $parts[1]['type'] ?? null);
         }
         self::assertCount(1, array_unique($api->headers('idempotency-key')));
-    }
-
-    /**
-     * The parts of a multipart body: their Content-Disposition, Content-Type and content.
-     *
-     * @return list<array{disposition: string, type: string|null, body: string}>
-     */
-    private static function parts(string $body, string $boundary): array
-    {
-        $parts = [];
-        foreach (\array_slice(explode("--{$boundary}", $body), 1, -1) as $raw) {
-            [$head, $content] = explode("\r\n\r\n", substr($raw, 2), 2) + ['', ''];
-            $headers = [];
-            foreach (explode("\r\n", $head) as $line) {
-                [$name, $value] = explode(':', $line, 2) + ['', ''];
-                $headers[strtolower($name)] = trim($value);
-            }
-            $parts[] = ['disposition' => $headers['content-disposition'] ?? '', 'type' => $headers['content-type'] ?? null, 'body' => substr($content, 0, -2)];
-        }
-
-        return $parts;
     }
 
     public function testRejectsEmptyPathIdsBeforeSendingAnything(): void

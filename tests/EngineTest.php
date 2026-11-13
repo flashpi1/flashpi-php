@@ -16,12 +16,15 @@ use Flashpi\Internal\RequestSpec;
 use Flashpi\Internal\Resource;
 use Flashpi\Internal\SystemClock;
 use Flashpi\Tests\Support\FakeClock;
+use Flashpi\Tests\Support\Forms;
 use Flashpi\Tests\Support\MockApi;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\Secrets;
 use Flashpi\Tests\Support\TestCase;
 use Flashpi\Tests\Support\Things;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\MultipartStream;
+use GuzzleHttp\Psr7\Request;
 
 /**
  * The parts of the request logic that need no API (Python: tests/test_http.py).
@@ -91,6 +94,18 @@ final class EngineTest extends TestCase
         }
         self::assertSame(['names' => ['password', 'file']], $form->__debugInfo());
         self::assertSame('MyP12Passw0rd', $form->parts()[0]['contents'] ?? null);
+    }
+
+    public function testEncodesTheFileNameOfAPartAsHtmlForms(): void
+    {
+        self::assertSame('firma ñ.p12', Multipart::encode('firma ñ.p12'));
+        self::assertSame('a%22b\\\\c%0D%0A%09%1B%7Fd/e.p12', Multipart::encode("a\"b\\c\r\n\t\x1B\x7Fd/e.p12"));
+        $form = new Multipart(['password' => 'x'], ['file' => ['filename' => "../a\"b\r\n.p12", 'contents' => 'p12', 'contentType' => 'application/x-pkcs12']]);
+        $request = new Request('POST', 'https://h', ['Content-Type' => 'multipart/form-data; boundary=b'], new MultipartStream($form->parts(), 'b'));
+        self::assertSame(
+            [['form-data; name="password"', null, 'x'], ['form-data; name="file"; filename="../a%22b%0D%0A.p12"', 'application/x-pkcs12', 'p12']],
+            array_map(static fn(array $part): array => array_values($part), Forms::parts($request)),
+        );
     }
 
     public function testKeepsAnUploadsSecretsOutOfTheTraceOfItsError(): void
