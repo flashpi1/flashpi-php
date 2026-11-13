@@ -14,6 +14,7 @@ use Flashpi\Resources\DebitNotes;
 use Flashpi\Resources\Documents;
 use Flashpi\Resources\Events;
 use Flashpi\Resources\Invoices;
+use Flashpi\Resources\Issuers;
 use Flashpi\Resources\PurchaseSettlements;
 use Flashpi\Resources\StatusResource;
 use Flashpi\Resources\Waybills;
@@ -80,6 +81,12 @@ final class Flashpi
     /** Every issued document, of any type: search, XML, RIDE (PDF) and email. */
     public readonly Documents $documents;
 
+    /**
+     * The issuers (RUCs) of the account, with their establishments, emission points and .p12
+     * certificates.
+     */
+    public readonly Issuers $issuers;
+
     /** Events: what happened to documents, certificates and email sending. */
     public readonly Events $events;
 
@@ -142,6 +149,7 @@ final class Flashpi
         $this->waybills = new Waybills($this->engine);
         $this->withholdings = new Withholdings($this->engine);
         $this->documents = new Documents($this->engine);
+        $this->issuers = new Issuers($this->engine);
         $this->events = new Events($this->engine);
         $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();

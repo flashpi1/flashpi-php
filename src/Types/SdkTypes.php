@@ -4,9 +4,22 @@ declare(strict_types=1);
 
 namespace Flashpi\Types;
 
+use Psr\Http\Message\StreamInterface;
+
 /**
  * Types the SDK adds to the API's (ApiTypes): shorter names, the webhook bodies, the open error
  * codes, the request options, list filters, uploads and the XML of a document.
+ *
+ * - `CertificateUpload`: a .p12 certificate and its password, for
+ *   `$flashpi->issuers->certificates->upload()` and `$flashpi->issuerOnboardings->create()`.
+ *   `file` is the .p12 (PKCS #12), up to 1 MiB: its contents as a string
+ *   (`file_get_contents('firma.p12')`), a stream opened for reading (`fopen('firma.p12', 'rb')`)
+ *   or a PSR-7 stream, read once from where it stands. `password` is sent to Flashpi only, never
+ *   stored in plain text. `filename` is the name sent with it (default `certificate.p12`).
+ * - `DocumentXml`: the XML of a document (`xml`) and which stage it comes from (`kind`):
+ *   `authorized` (the SRI's authorization with the document inside, the valid tax document),
+ *   `signed` (sent, not yet authorized) or `unsigned` (before signing); null when the API did not
+ *   say.
  *
  * Import one in your own PHPDoc with `@phpstan-import-type WebhookEvent from \Flashpi\Types\SdkTypes`.
  *
@@ -55,6 +68,11 @@ namespace Flashpi\Types;
  * @phpstan-type EmissionPointListParams EmissionPointsListQuery
  * @phpstan-type CertificateListParams CertificatesListQuery
  * @phpstan-type WebhookEndpointListParams WebhookEndpointsListQuery
+ * @phpstan-type CertificateUpload array{
+ *     file: string|resource|StreamInterface,
+ *     password: string,
+ *     filename?: string,
+ * }
  * @phpstan-type DocumentXmlKind 'authorized'|'signed'|'unsigned'
  * @phpstan-type DocumentXml array{
  *     xml: string,

@@ -40,4 +40,23 @@ final class Forms
 
         return $parts;
     }
+
+    /**
+     * The parts of a .p12 upload: the password and the file, as [name, file name, content type,
+     * content] (Python: tests/test_resources.py's sent_form()).
+     *
+     * @return list<array{string|null, string|null, string|null, string}>
+     */
+    public static function upload(RequestInterface $request): array
+    {
+        return array_map(
+            static function (array $part): array {
+                preg_match('/^form-data; name="([^"]*)"/', $part['disposition'], $name);
+                preg_match('/; filename="([^"]*)"$/', $part['disposition'], $filename);
+
+                return [$name[1] ?? null, $filename[1] ?? null, $part['type'], $part['body']];
+            },
+            self::parts($request),
+        );
+    }
 }
