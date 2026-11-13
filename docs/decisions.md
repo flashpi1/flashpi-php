@@ -108,6 +108,47 @@ and are listed so they can be confirmed or changed before 1.0.
   tags: it runs the resource's method and returns an `ApiResponse` with its data, the PSR-7
   response the method got and the request id. A method that sends nothing throws a
   `FlashpiException`, and a name the resource lacks a `\BadMethodCallException`.
+- **Resources.** One final class per resource in `Flashpi\Resources`, with its view next to it
+  (`DocumentsWithResponse`). The client's properties are Python's names in camelCase:
+  `invoices`, `creditNotes`, `debitNotes`, `purchaseSettlements`, `waybills`, `withholdings`,
+  `documents`, `issuers` (with `establishments`, whose `emissionPoints`, and `certificates`),
+  `issuerOnboardings`, `webhookEndpoints` (with `deliveries`), `events` and `status`; methods
+  too (`documents->sendEmail()`, `webhookEndpoints->getSecret()` and `rotateSecret()`). The
+  status resource's class is `StatusResource`, the name Node exports it with, since `Status` is
+  the type of its answer. Each document type is a class of its own rather than one generic
+  `DocumentIssuer`, so each `create()` declares its own body without PHPStan generics, which
+  IDEs read poorly.
+- **Method signatures.** The path ids first, as strings, in the order of the path; then the
+  body, the filters (`?array $params = null`) or the upload; then `array $options = []`. Bodies
+  are native arrays typed by their generated shape, so an object body is a `\TypeError` (Python
+  sends any body as it is; a list is still sent as a JSON array). A body the contract makes
+  optional is `?array $body = null`: `issuerOnboardings->complete()` then sends `{}` and
+  `webhookEndpoints->rotateSecret()` no body, as in Python. `documents->sendEmail()` always
+  sends `{}`; `webhookEndpoints->verify()` and `deliveries->replay()` send no body. A DELETE
+  returns `void` (its view's `data` is null), `documents->pdf()` the RIDE's bytes as a string
+  and `documents->xml()` a `DocumentXml` array, its `kind` from the `Flashpi-Xml-Kind` header.
+- **Certificate uploads.** A `CertificateUpload` (SdkTypes) is an array with `file`,
+  `password` and an optional `filename`. `file` is the .p12's contents as a string, a stream
+  opened for reading (`fopen('firma.p12', 'rb')`) or a PSR-7 stream: PHP strings are bytes, so a
+  string is always the contents, never a path. A stream is read from where it stands, in pieces,
+  up to one byte past 1 MiB, before anything is sent. As in Python, a password that is not a
+  string, an empty file, one over 1 MiB, a non-blocking stream with no data ready and a read
+  that fails or times out throw a `FlashpiException`; a file of another type, a stream opened
+  for writing only, a PSR-7 stream that cannot be read and a file name that is not a string
+  throw an `\InvalidArgumentException` (Python's `TypeError`). A PSR-7 stream's own exception is
+  thrown as it is, as Python lets a file's `OSError` through. Unknown keys are not refused at run
+  time, as in Python; PHPStan's sealed shapes report them. The file part's
+  `Content-Disposition` is written by the SDK, its file name sent whole and encoded as HTML
+  forms and httpx do (with DEL and ESC encoded too, which psr7 3 refuses in a header): Guzzle
+  would keep only the base name, and psr7 2 would not escape it.
+- **Tests of the contract.** `tests/OperationsTest.php` reads `openapi/openapi.json` and checks
+  that its 45 operations map one to one onto the resources' methods, with the contract's ids,
+  filters, bodies and answers, that each view declares the same methods, and that each method
+  sends its operation. `tests/Types/Fixtures/ResourcesConsumer.php` uses every resource as the
+  README does and passes PHPStan at level max; `Invalid/ResourcesMisuse.php` holds the mistakes
+  PHPStan must report.
+- **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
+  `composer test:live` runs it. The Python suite's async-client cases run on the one client.
 - **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue
   from page to page), and `data`, `hasMore`, `nextCursor`, `hasNextPage()` and `nextPage()` move
   one page at a time. Walking a page twice fetches the following pages again.
