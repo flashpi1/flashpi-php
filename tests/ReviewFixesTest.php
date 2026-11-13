@@ -317,6 +317,147 @@ final class ReviewFixesTest extends TestCase
         self::throws(UnprocessableEntityException::class, static fn() => $api->things->issue([]));
     }
 
+    // The Node cases that name real resources, on the real resources (Python:
+    // TestOnTheRealResources).
+
+    public function testWaitsForAnEarlierInvoiceAttemptWithoutUsingUpTheRetries(): void
+    {
+        $api = self::api([
+            Replies::networkError('socket hang up'),
+            ...self::inProgress(5),
+            Replies::json(Replies::document(Replies::ID, 'authorized'), 200, ['Idempotent-Replayed' => 'true']),
+        ]);
+        $document = $api->op('invoices.create', ['options' => ['waitForAuthorization' => true, 'waitTimeoutSeconds' => 30]]);
+        self::assertSame([Replies::ID, 'authorized'], self::members($document, 'id', 'status'));
+        self::assertCount(7, $api->sent);
+        self::assertCount(1, array_unique($api->headers('idempotency-key')));
+        self::assertSame(17.5, $api->clock->elapsed());
+    }
+
+    public function testRecoversTheInvoiceIfTheWaitEndsInIdempotencyKeyReused(): void
+    {
+        $api = self::api([
+            Replies::networkError('socket hang up'),
+            ...self::inProgress(1),
+            Replies::problem(422, 'idempotency_key_reused', ['documentId' => Replies::OTHER_ID]),
+            Replies::json(Replies::document(Replies::OTHER_ID, 'authorized')),
+        ]);
+        self::assertSame([Replies::OTHER_ID], self::members($api->op('invoices.create', []), 'id'));
+        self::assertSame('/v1/documents/' . Replies::OTHER_ID, $api->request(3)->getUri()->getPath());
+    }
+
+    public function testPutsTheIdempotencyKeyOnTheErrorsOfAPost(): void
+    {
+        $api = self::api([Replies::problem(422, 'validation_failed')]);
+        $error = self::throws(ApiException::class, static fn() => $api->op('invoices.create', []));
+        self::assertSame($api->request(0)->getHeaderLine('idempotency-key'), $error->idempotencyKey);
+
+        $network = self::api([Replies::networkError('x')], ['maxRetries' => 0]);
+        $connection = self::throws(ConnectionException::class, static fn() => $network->op('issuers.create', []));
+        self::assertMatchesRegularExpression('/^[0-9a-f-]{36}$/', (string) $connection->idempotencyKey);
+
+        $clock = new FakeClock();
+        $slow = self::api([Replies::timeoutAfter($clock, 1)], ['maxRetries' => 0, 'timeout' => 1.0], $clock);
+        $timeout = self::throws(TimeoutException::class, static fn() => $slow->op('invoices.create', [], ['idempotencyKey' => 'order-7']));
+        self::assertSame('order-7', $timeout->idempotencyKey);
+
+        $read = self::api([Replies::problem(404, 'not_found')]);
+        $notFound = self::throws(ApiException::class, static fn() => $read->op('documents.get', Replies::ID));
+        self::assertNull($notFound->idempotencyKey);
+    }
+
+    public function testTakesTheIdempotencyKeyFromAHeaderOnEveryAttempt(): void
+    {
+        $api = self::api([Replies::problem(503, 'x'), Replies::json([], 201)]);
+        $api->op('issuers.create', [], ['extraHeaders' => ['Idempotency-Key' => 'order-42']]);
+        self::assertSame(['order-42', 'order-42'], $api->headers('idempotency-key'));
+    }
+
+    public function testKeepsTheKeyWhenTheRecoveredDocumentCannotBeRead(): void
+    {
+        $api = self::api([
+            Replies::networkError('reset'),
+            Replies::problem(422, 'idempotency_key_reused', ['documentId' => Replies::OTHER_ID]),
+            ...array_fill(0, 3, Replies::networkError('reset')),
+        ]);
+        $error = self::throws(ConnectionException::class, static fn() => $api->op('withholdings.create', []));
+        self::assertSame($api->request(0)->getHeaderLine('idempotency-key'), $error->idempotencyKey);
+    }
+
+    public function testSendsTheSameInvoiceOnARetryWhenTheCallerChangesIt(): void
+    {
+        $body = ['items' => [['code' => 'A']]];
+        $changeThenFail = static function (RequestInterface $request) use (&$body): ResponseInterface {
+            $body['items'][0] = ['code' => 'B'];
+
+            throw new \GuzzleHttp\Exception\ConnectException('reset', $request);
+        };
+        $api = self::api([$changeThenFail, Replies::json(Replies::document(), 202)]);
+        $api->op('invoices.create', $body);
+        self::assertSame(['{"items":[{"code":"A"}]}', '{"items":[{"code":"A"}]}'], array_map(
+            static fn(RequestInterface $request): string => (string) $request->getBody(),
+            $api->sent,
+        ));
+    }
+
+    #[DataProvider('dotSegments')]
+    public function testRefusesDotSegmentIdsOfTheRealResourcesBeforeSendingAnything(string $value): void
+    {
+        $api = self::api();
+        $calls = [
+            ['issuers.establishments.delete', [Replies::ID, $value]],
+            ['issuers.establishments.emissionPoints.delete', [Replies::ID, Replies::ID, $value]],
+            ['issuers.certificates.get', [Replies::ID, $value]],
+            ['webhookEndpoints.delete', [$value]],
+            ['webhookEndpoints.deliveries.list', [$value]],
+            ['documents.xml', [$value]],
+        ];
+        foreach ($calls as [$name, $arguments]) {
+            self::throws(FlashpiException::class, static fn() => $api->op($name, ...$arguments), '/Invalid id/');
+        }
+        self::assertSame([], $api->sent);
+    }
+
+    public function testRefusesEmptyIdsOfTheRealResourcesBeforeSendingAnything(): void
+    {
+        $api = self::api();
+        self::throws(FlashpiException::class, static fn() => $api->op('issuers.get', ''), "/^Missing id in \\/v1\\/issuers\\/\\{id\\}: got ''$/");
+        self::throws(FlashpiException::class, static fn() => $api->op('issuers.establishments.emissionPoints.list', Replies::ID, ' '), '/\\/establishments\\/\\{id\\}\\/emission-points/');
+        self::assertSame([], $api->sent);
+    }
+
+    public function testSendsIdsOfTheRealResourcesThatOnlyContainDotsEncoded(): void
+    {
+        $api = self::api([Replies::json([]), Replies::json([])]);
+        $api->op('documents.get', '...');
+        $api->op('documents.get', '%2e%2e');
+        self::assertSame(['/v1/documents/...', '/v1/documents/%252e%252e'], array_map(
+            static fn(RequestInterface $request): string => $request->getUri()->getPath(),
+            $api->sent,
+        ));
+    }
+
+    public function testLetsTheRequestLanguageOfARealResourceWinOverAClientAcceptLanguageHeader(): void
+    {
+        $api = self::api([Replies::json([])], ['defaultHeaders' => ['Accept-Language' => 'es']]);
+        $api->op('status.get', ['language' => 'en']);
+        self::assertSame(['en'], $api->request(0)->getHeader('accept-language'));
+    }
+
+    #[DataProvider('badTimeouts')]
+    public function testRejectsARequestTimeoutOfARealResourceBeforeSending(mixed $timeout): void
+    {
+        $api = self::api([Replies::json([])]);
+        self::throws(FlashpiException::class, static fn() => $api->op('status.get', ['timeout' => $timeout]), '/timeout/');
+        self::assertSame([], $api->sent);
+    }
+
+    public function testAcceptsExplicitNullOptionsOfARealResourceAsTheDefaults(): void
+    {
+        $api = self::api([Replies::json([])]);
+        self::assertSame([], $api->op('status.get', ['timeout' => null, 'maxRetries' => null, 'idempotencyKey' => null]));
+    }
+
     /**
      * @return list<ResponseInterface>
      */
