@@ -9,8 +9,14 @@ use Flashpi\Exception\WebhookVerificationException;
 use Flashpi\Internal\ClientConfig;
 use Flashpi\Internal\Engine;
 use Flashpi\Internal\Validate;
+use Flashpi\Resources\CreditNotes;
+use Flashpi\Resources\DebitNotes;
 use Flashpi\Resources\Events;
+use Flashpi\Resources\Invoices;
+use Flashpi\Resources\PurchaseSettlements;
 use Flashpi\Resources\StatusResource;
+use Flashpi\Resources\Waybills;
+use Flashpi\Resources\Withholdings;
 use Flashpi\Types\SdkTypes;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
@@ -51,6 +57,24 @@ final class Flashpi
      * @var 'test'|'live'
      */
     public readonly string $environment;
+
+    /** Invoices (facturas). */
+    public readonly Invoices $invoices;
+
+    /** Credit notes (notas de crédito). */
+    public readonly CreditNotes $creditNotes;
+
+    /** Debit notes (notas de débito). */
+    public readonly DebitNotes $debitNotes;
+
+    /** Purchase settlements (liquidaciones de compra). */
+    public readonly PurchaseSettlements $purchaseSettlements;
+
+    /** Waybills (guías de remisión). */
+    public readonly Waybills $waybills;
+
+    /** Withholding receipts (comprobantes de retención). */
+    public readonly Withholdings $withholdings;
 
     /** Events: what happened to documents, certificates and email sending. */
     public readonly Events $events;
@@ -107,6 +131,12 @@ final class Flashpi
         );
         $this->environment = $config->environment();
         $this->engine = new Engine($config, $httpClient ?? new Client(['allow_redirects' => false, 'http_errors' => false]));
+        $this->invoices = new Invoices($this->engine);
+        $this->creditNotes = new CreditNotes($this->engine);
+        $this->debitNotes = new DebitNotes($this->engine);
+        $this->purchaseSettlements = new PurchaseSettlements($this->engine);
+        $this->waybills = new Waybills($this->engine);
+        $this->withholdings = new Withholdings($this->engine);
         $this->events = new Events($this->engine);
         $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();
