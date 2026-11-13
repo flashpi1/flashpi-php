@@ -23,7 +23,7 @@ final class HeadersTest extends TestCase
 {
     private const BAD_VALUES = ['injection' => "a\r\nX-Injected: 1", 'LF' => "a\nb", 'CR' => "a\rb", 'NUL' => "a\0b", 'VT' => "a\x0bb", 'FF' => "a\x0cb", 'DEL' => "a\x7fb"];
 
-    private const BAD_NAMES = ['space' => 'x tenant', 'colon' => 'x:t', 'empty' => '', 'line break' => "x\r\ny", 'ñ' => 'x-ñ', 'parentheses' => '(x)'];
+    private const BAD_NAMES = ['space' => 'x tenant', 'colon' => 'x:t', 'empty' => '', 'line break' => "x\r\ny", 'ñ' => 'x-ñ', 'parentheses' => '(x)', 'trailing line break' => "x-a\n"];
 
     private const FRAMING = ['Content-Length', 'content-length', 'Transfer-Encoding', 'TRANSFER-ENCODING'];
 

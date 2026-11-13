@@ -24,7 +24,7 @@ final class RetryAfter
         '!D M j H:i:s Y',
     ];
 
-    private const ISO_8601 = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/i';
+    private const ISO_8601 = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\z/i';
 
     private function __construct() {}
 
@@ -39,7 +39,7 @@ final class RetryAfter
             return null;
         }
         $trimmed = trim($value, " \t\r\n");
-        if (preg_match('/^[0-9]+$/', $trimmed) === 1) {
+        if (preg_match('/^[0-9]+\z/', $trimmed) === 1) {
             return \strlen($trimmed) <= self::MAX_DIGITS ? (int) $trimmed : 10 ** self::MAX_DIGITS;
         }
         $moment = self::date($trimmed);

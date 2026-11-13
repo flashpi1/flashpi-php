@@ -80,7 +80,7 @@ final class Webhooks
                 'The webhook-id, webhook-timestamp and webhook-signature headers are required',
             );
         }
-        if (preg_match('/^[0-9]{1,12}$/', $timestamp) !== 1) {
+        if (preg_match('/^[0-9]{1,12}\z/', $timestamp) !== 1) {
             throw new WebhookVerificationException(WebhookVerificationException::INVALID_TIMESTAMP, 'The webhook-timestamp is not valid');
         }
         // Written so that anything unexpected fails closed.
@@ -262,7 +262,7 @@ final class Webhooks
      */
     private static function base64(string $value): ?string
     {
-        if (preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $value) !== 1 || \strlen($value) % 4 === 1) {
+        if (preg_match('/^[A-Za-z0-9+\/]*={0,2}\z/', $value) !== 1 || \strlen($value) % 4 === 1) {
             return null;
         }
         $data = \strlen($value) % 4 === 0 ? rtrim($value, '=') : $value;

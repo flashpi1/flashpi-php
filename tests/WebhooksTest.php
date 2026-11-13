@@ -172,8 +172,8 @@ final class WebhooksTest extends TestCase
      */
     public static function badTimestamps(): iterable
     {
-        foreach (['abc', '-1', '1792152000.5', '1234567890123', '١٧٩', ' 1792152000'] as $timestamp) {
-            yield $timestamp => [$timestamp];
+        foreach (['abc', '-1', '1792152000.5', '1234567890123', '١٧٩', ' 1792152000', "1792152000\n"] as $timestamp) {
+            yield (string) json_encode($timestamp) => [$timestamp];
         }
     }
 

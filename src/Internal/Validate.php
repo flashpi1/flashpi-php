@@ -21,7 +21,7 @@ final class Validate
     public const MAX_TIMEOUT = 2147483.647;
 
     /** A header name (RFC 9110 `token`). */
-    private const TOKEN = '/^[!#$%&\'*+.^_`|~0-9A-Za-z-]+$/';
+    private const TOKEN = '/^[!#$%&\'*+.^_`|~0-9A-Za-z-]+\z/';
 
     /** Trimmed from both ends of a header value, as the Fetch standard's `Headers` does. */
     private const HTTP_WHITESPACE = " \t\r\n";
@@ -35,7 +35,7 @@ final class Validate
     private const FRAMING = ['content-length', 'transfer-encoding'];
 
     /** What an API key is made of: visible ASCII, without spaces. */
-    private const API_KEY = '/^[\x21-\x7e]+$/';
+    private const API_KEY = '/^[\x21-\x7e]+\z/';
 
     /**
      * What JavaScript's `trim()` removes around a string, the Node SDK's key included: its white

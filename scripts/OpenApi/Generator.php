@@ -353,7 +353,7 @@ final class Generator
         if (\array_key_exists($name, $this->definitions)) {
             throw new GenerationError("Two definitions are named {$name}");
         }
-        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name) !== 1 || \in_array(strtolower($name), self::RESERVED_NAMES, true)) {
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*\z/', $name) !== 1 || \in_array(strtolower($name), self::RESERVED_NAMES, true)) {
             throw new GenerationError("{$name} cannot be the name of a type alias");
         }
         $this->definitions[$name] = $definition;
@@ -687,7 +687,7 @@ final class Generator
 
     private static function key(string $name): string
     {
-        return preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name) === 1 ? $name : self::literal($name, $name);
+        return preg_match('/^[A-Za-z_][A-Za-z0-9_]*\z/', $name) === 1 ? $name : self::literal($name, $name);
     }
 
     /**

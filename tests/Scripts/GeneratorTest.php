@@ -175,6 +175,7 @@ final class GeneratorTest extends TestCase
         yield 'two definitions' => [['A' => ['type' => 'object', 'properties' => ['x' => ['type' => 'string', 'enum' => ['a']]]], 'AX' => ['type' => 'string']], 'Two definitions'];
         yield 'reserved name' => [['List' => ['type' => 'string']], 'cannot be the name'];
         yield 'invalid name' => [['A-B' => ['type' => 'string']], 'cannot be the name'];
+        yield 'name with a line break' => [["A\n" => ['type' => 'string']], 'cannot be the name'];
         yield 'recursion' => [['A' => ['type' => 'object', 'properties' => ['b' => ['$ref' => '#/components/schemas/A']]]], 'refers to itself'];
         yield 'discriminant not allowed' => [[
             'A' => ['type' => 'object', 'properties' => ['t' => ['type' => 'string', 'enum' => ['a']]]],
