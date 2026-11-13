@@ -42,9 +42,19 @@ use Flashpi\Page;
 abstract class Resource
 {
     /**
+     * A resource with nested resources builds them in its own constructor, after calling this one:
+     *
+     * ```php
+     * public function __construct(Engine $engine)
+     * {
+     *     parent::__construct($engine);
+     *     $this->establishments = new Establishments($engine);
+     * }
+     * ```
+     *
      * @internal Built by the client.
      */
-    final public function __construct(protected readonly Engine $engine) {}
+    public function __construct(protected readonly Engine $engine) {}
 
     /**
      * Sends the request (with its retries) and returns its data.

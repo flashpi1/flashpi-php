@@ -13,11 +13,14 @@ use Flashpi\Internal\Engine;
 use Flashpi\Internal\Multipart;
 use Flashpi\Internal\Path;
 use Flashpi\Internal\RequestSpec;
+use Flashpi\Internal\Resource;
 use Flashpi\Internal\SystemClock;
 use Flashpi\Tests\Support\FakeClock;
+use Flashpi\Tests\Support\MockApi;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\Secrets;
 use Flashpi\Tests\Support\TestCase;
+use Flashpi\Tests\Support\Things;
 use GuzzleHttp\Client;
 
 /**
@@ -159,6 +162,21 @@ final class EngineTest extends TestCase
             self::assertGreaterThanOrEqual(0.0, $random);
             self::assertLessThan(1.0, $random);
         }
+    }
+
+    public function testAResourceCanBuildNestedResources(): void
+    {
+        $api = self::api([Replies::json(['id' => 'x'])]);
+        $parent = new class (MockApi::engine($api->client)) extends Resource {
+            public readonly Things $children;
+
+            public function __construct(Engine $engine)
+            {
+                parent::__construct($engine);
+                $this->children = new Things($engine);
+            }
+        };
+        self::assertSame(['id' => 'x'], $parent->children->get('x'));
     }
 
     public function testSyncTimeoutFloor(): void
