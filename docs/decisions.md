@@ -1,0 +1,138 @@
+# Decisions
+
+Decisions about flashpi/flashpi-php, the PHP SDK, newest first. Its design follows the Node.js
+SDK, [@flashpi/node](https://github.com/flashpi1/flashpi-node), and the Python SDK,
+[flashpi](https://github.com/flashpi1/flashpi-python), whose decisions
+([Node](https://github.com/flashpi1/flashpi-node/blob/main/docs/decisions.md),
+[Python](https://github.com/flashpi1/flashpi-python/blob/main/docs/decisions.md)) apply here
+unless an entry says otherwise. Entries marked as the owner's were taken with the Flashpi product
+owner; the others were chosen while porting, after the Python SDK where the owner had not decided,
+and are listed so they can be confirmed or changed before 1.0.
+
+## 2026-11-13: the PHP SDK
+
+### The owner's decisions
+
+- **Package and repository.** `flashpi/flashpi-php` on Packagist, namespace `Flashpi\`, public
+  repository `flashpi1/flashpi-php`, MIT license held by SIGNIADIGITAL S.A. PHP 8.2 or later,
+  tested on 8.2 to 8.5. First version 0.1.0 through release-please. Packagist reads the tags from
+  GitHub: there is no upload or publish job, and the owner submits the repository to Packagist.
+- **One runtime dependency.** Guzzle, `^7.8.2 || ^8.0` (Laravel 11 and 12 need 7, Laravel 13
+  takes both), tested on both majors. A caller can pass a Guzzle client of their own
+  (`GuzzleHttp\ClientInterface`).
+- **Models are arrays.** Associative arrays with the API's camelCase keys
+  (`$document['accessKey']`), typed by PHPStan array shapes generated from the OpenAPI document,
+  the counterpart of Python's TypedDicts. No hydrated model classes. One synchronous client, no
+  async. No Laravel integration here: a separate `flashpi/flashpi-laravel` comes later.
+- **Tooling.** PHPUnit 11; PHPStan at the highest level over the library, the tests, the scripts
+  and a consumer file; PHP-CS-Fixer with the PER-CS 2.0 rule set.
+- **The Node and Python SDKs' design.** READMEs in Spanish (`README.md`) and English
+  (`README.en.md`); resource style (`$flashpi->invoices->create($body)`,
+  `$flashpi->documents->list([...])`, `$flashpi->issuers->establishments->create($issuerId,
+  $body)`); the same retries, idempotency, recoveries, in-progress wait, deadline per attempt,
+  header and API key validation, webhook verification, secrets kept out of every output, and
+  release process (release-please from 0.1.0, the live API test on the release PR only, the
+  flashpi-bot GitHub App for release-please and the OpenAPI sync PR, grouped Dependabot).
+
+### Chosen while porting (to confirm)
+
+- **Layout.** The client is `Flashpi\Flashpi`; next to it are `Page`, `ApiResponse`, `Webhooks`
+  and `Version`. Exceptions are in `Flashpi\Exception`, types in `Flashpi\Types`, and the engine,
+  the request specs and the bases of the resources in `Flashpi\Internal` (all `@internal`). Classes
+  are final, except the bases of the exception hierarchy and of the resources. Every file declares
+  strict types.
+- **The client.** `new Flashpi(apiKey: ..., baseUrl: ..., timeout: ..., maxRetries: ...,
+  language: ..., defaultHeaders: ..., httpClient: ...)`: named arguments, each null for its
+  default (PHP cannot make them keyword-only). Timeouts are seconds as floats, as in Python. The
+  client the SDK creates is a Guzzle client that follows no redirects; with a caller's client,
+  every request still sets `allow_redirects: false`, `http_errors: false`, its timeouts and
+  `expect: false`. `FLASHPI_API_KEY` is read from `$_ENV`, then `$_SERVER`, then `getenv()`, as
+  dotenv libraries fill the first two. The User-Agent is `flashpi-php/<version>`.
+- **Per-call options.** A last array argument with the keys of `RequestOptions` (`idempotencyKey`,
+  `timeout`, `maxRetries`, `language`, `correlationId`, `extraHeaders`); null means the client's
+  setting, and an unknown key is refused.
+- **Exceptions.** `FlashpiException` (extends `\RuntimeException`) for Python's `FlashpiError`;
+  `ApiException` with `BadRequestException`, `AuthenticationException`,
+  `PermissionDeniedException`, `NotFoundException`, `ConflictException`,
+  `UnprocessableEntityException`, `RateLimitException` and `InternalServerException`;
+  `ConnectionException` and `TimeoutException` (Node's names: the namespace keeps them apart from
+  PHP's); `WebhookVerificationException` with `->reason` and a constant per reason. Their fields
+  are public read-only properties. The API's error code is `errorCode`, not `code`: PHP's
+  `\Exception` already has a protected `$code` and a final `getCode()`, which returns the HTTP
+  status here. `retryAfter()` is a method, since it reads the clock, and `header($name)` reads a
+  response header in any letter case (`headers` holds them by lowercase name).
+  `idempotencyKey` is the only property the SDK sets after creating the exception, so it is not
+  read-only.
+- **Misused arguments.** What PHP's native types catch throws a `\TypeError` (under strict
+  types); what they cannot throws an `\InvalidArgumentException`: an unknown option (a
+  `TypeError` in Python), an option, header name or header value that is not a string, a header
+  value with a line break or another control character, a bad header name, `Content-Length` or
+  `Transfer-Encoding`, a query value that is not a string, a number or a boolean, a body
+  `json_encode()` refuses, and a webhook tolerance or time that is not finite (or a negative
+  tolerance). Timeouts, `maxRetries`, ids, `baseUrl` and the API key stay `FlashpiException`, as
+  in Node and Python.
+- **Headers.** Python's rules, with two differences that come from PHP's strings being bytes:
+  bytes that are not UTF-8 are not refused (PSR-7 sends them as obs-text), and there is no lone
+  surrogate to refuse. As in Python, only `Content-Length` and `Transfer-Encoding` are refused; the
+  Node SDK also refuses `Keep-Alive`, `Upgrade` and `Expect`. A request PSR-7 refuses to build
+  throws a `FlashpiException` that is not retried, without PSR-7's reason, which quotes the
+  refused value.
+- **Transfer failures.** Every failure of a Guzzle transfer is retried, as a `TimeoutException`
+  (Guzzle 8's timeout classes, curl's error 28 on Guzzle 7, or the attempt's deadline passed) or
+  a `ConnectionException` whose message carries Guzzle's. Guzzle 7 and 8 classify failures
+  differently, and Guzzle 8's stream handler reports a timeout while waiting for the headers as a
+  plain `RequestException`, so the class cannot tell a refused request from a network failure as
+  httpx's could. Guzzle's exception is never kept as the previous one: it holds the request,
+  whose `Authorization` header carries the API key. Other throwables (a bug in a middleware, an
+  invalid Guzzle option) are thrown as they are. A caller's client that throws for error
+  statuses (`BadResponseException`) gets its response read as the API's answer.
+- **The deadline of an attempt.** Guzzle's `timeout`, `connect_timeout` and `read_timeout` are
+  the attempt's timeout (at least one millisecond, Guzzle 8's floor). The curl handler limits the
+  whole transfer on Guzzle 7 and 8, and so does Guzzle 8's stream handler. The SDK then reads the
+  body itself, checking the deadline as each piece arrives and once the answer is read, so an
+  answer whose end comes late fails with any handler. Guzzle 7's stream handler (PHP without the
+  curl extension) limits each read only: there, an answer that trickles in is refused once it has
+  arrived, not when the deadline passes. The same applies to a caller's client.
+- **Bodies and answers.** A JSON body is encoded once with `JSON_UNESCAPED_SLASHES` and
+  `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; an empty array is sent as `{}`, since every
+  request body of the API is an object; objects (`JsonSerializable`) are accepted. Answers are
+  decoded into associative arrays, invalid UTF-8 replaced. Text and bytes answers (XML, PDF) are
+  the body as it came: PHP strings are bytes. The PSR-7 response an `ApiResponse` holds has its
+  body rewound into a new stream, so it can be read again.
+- **Queries and paths.** Null values are left out, booleans are sent as `true` and `false`,
+  numbers and `Stringable` values as text, and anything else is refused; the encoding is
+  Python's `urlencode()` (a space as `+`). Path ids are encoded as `encodeURIComponent()` does;
+  empty or blank ids, `.` and `..` are refused.
+- **withResponse().** Each resource's `withResponse()` returns a view
+  (`$flashpi->documents->withResponse()->get($id)`) whose methods are declared with `@method`
+  tags: it runs the resource's method and returns an `ApiResponse` with its data, the PSR-7
+  response the method got and the request id. A method that sends nothing throws a
+  `FlashpiException`, and a name the resource lacks a `\BadMethodCallException`.
+- **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue
+  from page to page), and `data`, `hasMore`, `nextCursor`, `hasNextPage()` and `nextPage()` move
+  one page at a time. Walking a page twice fetches the following pages again.
+- **Webhooks.** `Webhooks` has `unwrap()` and `verifySignature()` (also `$flashpi->webhooks`),
+  and the client has the static `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`:
+  PHP cannot share one name between a static and an instance method, and calling a static method
+  on an instance is refused by PHPStan's strict rules. As in Python, a payload that is not a
+  string (or a `Stringable`, such as a PSR-7 body) is `invalid_payload`, and a secret that is not
+  a string (`getenv()` returning false) is `invalid_secret`, rather than a `\TypeError`, so a
+  receiver answers 400. Headers are any iterable (arrays, PSR-7's `getHeaders()`, Symfony's
+  `HeaderBag`, a generator), read once; `now` is a date or Unix seconds.
+- **Secrets.** The API key lives in a closure inside the client's configuration, and a
+  certificate upload's parts in one inside its multipart body: `var_dump()`, `print_r()`,
+  `var_export()`, a cast to array and `serialize()` never show them (serializing a client fails).
+  `__debugInfo()` shows only what is safe, and every parameter that holds the key, a webhook
+  secret or its key, a .p12, its password, a Guzzle request or a Guzzle exception is marked
+  `#[\SensitiveParameter]`, so stack traces hide it. PHP's traces carry arguments, not local
+  variables, so the Python SDK's work on frame locals has no counterpart.
+- **Types.** A generator of our own (`scripts/openapi.php`, PHP alone) writes one class,
+  `Flashpi\Types\ApiTypes`, with a `@phpstan-type` per schema and per list query, named as in
+  Python; hand-written types are in `Flashpi\Types\SdkTypes`. `number` is `int|float`,
+  `additionalProperties: true` is `...<string, mixed>`, and every reference to `ErrorCode` or
+  `FieldErrorCode` accepts any string (Python opens them in hand-written types only). PHPDoc
+  aliases carry no description per member. PHPStan 2 seals array shapes only with its bleeding
+  edge configuration: without it, a misspelled optional key is not reported. This repository
+  enables it; the README should tell consumers.
+- **Coverage.** pcov only measures `src/` unless told otherwise: CI must pass
+  `-d pcov.directory=.` for the scripts to count.
