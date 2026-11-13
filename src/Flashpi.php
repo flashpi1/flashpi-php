@@ -14,6 +14,7 @@ use Flashpi\Resources\DebitNotes;
 use Flashpi\Resources\Documents;
 use Flashpi\Resources\Events;
 use Flashpi\Resources\Invoices;
+use Flashpi\Resources\IssuerOnboardings;
 use Flashpi\Resources\Issuers;
 use Flashpi\Resources\PurchaseSettlements;
 use Flashpi\Resources\StatusResource;
@@ -87,6 +88,9 @@ final class Flashpi
      */
     public readonly Issuers $issuers;
 
+    /** Creates an issuer from its .p12 certificate. */
+    public readonly IssuerOnboardings $issuerOnboardings;
+
     /** Events: what happened to documents, certificates and email sending. */
     public readonly Events $events;
 
@@ -150,6 +154,7 @@ final class Flashpi
         $this->withholdings = new Withholdings($this->engine);
         $this->documents = new Documents($this->engine);
         $this->issuers = new Issuers($this->engine);
+        $this->issuerOnboardings = new IssuerOnboardings($this->engine);
         $this->events = new Events($this->engine);
         $this->status = new StatusResource($this->engine);
         $this->webhooks = new Webhooks();

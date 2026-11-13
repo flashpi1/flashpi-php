@@ -331,7 +331,7 @@ final class CertificateUploadsTest extends TestCase
      */
     private static function uploadMethods(): array
     {
-        return ['issuers.certificates.upload'];
+        return ['issuers.certificates.upload', 'issuerOnboardings.create'];
     }
 
     /**
