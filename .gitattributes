@@ -1,0 +1,15 @@
+# Normalize line endings for everything we author.
+* text=auto eol=lf
+
+# Composer installs the package from GitHub's archive of a tag: keep everything that is not the
+# library out of it.
+/.github export-ignore
+/docs export-ignore
+/scripts export-ignore
+/tests export-ignore
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore

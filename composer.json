@@ -1,0 +1,53 @@
+{
+  "name": "flashpi/flashpi-php",
+  "description": "The official PHP SDK for Flashpi, the electronic invoicing API for Ecuador's SRI.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "flashpi",
+    "sri",
+    "ecuador",
+    "electronic-invoicing",
+    "facturacion-electronica",
+    "invoice",
+    "api",
+    "sdk"
+  ],
+  "homepage": "https://flashpi.com.ec",
+  "authors": [
+    {
+      "name": "SIGNIADIGITAL S.A.",
+      "homepage": "https://flashpi.com.ec"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/flashpi1/flashpi-php/issues",
+    "source": "https://github.com/flashpi1/flashpi-php",
+    "docs": "https://flashpi.com.ec/docs/sdks/"
+  },
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "guzzlehttp/guzzle": "^7.8.2 || ^8.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "phpstan/phpstan": "^2.3",
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Flashpi\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Flashpi\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
