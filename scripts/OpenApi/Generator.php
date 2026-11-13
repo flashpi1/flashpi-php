@@ -603,7 +603,7 @@ final class Generator
         }
         if ($definition->open) {
             // additionalProperties: true. Members the document does not declare may appear.
-            $lines[] = self::INDENT . '...';
+            $lines[] = self::INDENT . '...<string, mixed>';
         }
         $lines[] = '}';
 

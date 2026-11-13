@@ -148,7 +148,7 @@ final class GeneratorTest extends TestCase
         $aliases = self::aliases();
         self::assertSame(['ErrorCode|string', false], self::fields(self::alias($aliases, 'ProblemDetails'))['code'] ?? null);
         self::assertSame(['FieldErrorCode|string', false], self::fields(self::alias($aliases, 'FieldError'))['code'] ?? null);
-        self::assertStringEndsWith("\n *     ...\n * }", self::alias($aliases, 'ProblemDetails'));
+        self::assertStringEndsWith("\n *     ...<string, mixed>\n * }", self::alias($aliases, 'ProblemDetails'));
         self::assertStringStartsWith("'bad_request'", self::alias($aliases, 'ErrorCode'));
     }
 
@@ -275,7 +275,7 @@ final class GeneratorTest extends TestCase
             ' * @phpstan-type Plain mixed',
             ' * @phpstan-type Nothing null',
             ' * @phpstan-type Empty array{}',
-            " * @phpstan-type Open array{\n *     ...\n * }",
+            " * @phpstan-type Open array{\n *     ...<string, mixed>\n * }",
             " * @phpstan-type Quoted 'it\\'s'|'a\\\\b'|7|false|null",
             ' * @phpstan-type Numbers list<int|float|null>',
             ' * @phpstan-type Choice Bag',

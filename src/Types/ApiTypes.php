@@ -828,7 +828,7 @@ namespace Flashpi\Types;
  *     environment?: ProblemDetailsEnvironment,
  *     expectedTotal?: string,
  *     computedTotal?: string,
- *     ...
+ *     ...<string, mixed>
  * }
  * @phpstan-type ProblemDetailsDocumentStatus 'processing'
  *     |'pending_sri'
