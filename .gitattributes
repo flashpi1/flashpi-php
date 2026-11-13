@@ -5,6 +5,7 @@
 # library out of it.
 /.github export-ignore
 /docs export-ignore
+/openapi export-ignore
 /scripts export-ignore
 /tests export-ignore
 /.editorconfig export-ignore
