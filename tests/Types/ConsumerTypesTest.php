@@ -28,7 +28,10 @@ final class ConsumerTypesTest extends TestCase
             [self::line("self::issue(['issuerId'"), "Array does not have offset 'customer'."],
             [self::line("'sequential' => '7'"), "Offset 'sequential' (int) does not accept type string."],
             [self::line("'idempotencykey'"), "Sealed array shape does not accept array with extra key 'idempotencykey'."],
-            [self::line("'fr'"), "Offset 'language' ('en'|'es'|null) does not accept type 'fr'."],
+            [self::line("'fr']"), "Offset 'language' ('en'|'es'|null) does not accept type 'fr'."],
+            [self::line("language: 'fr'"), "expects 'en'|'es'|null, 'fr' given."],
+            [self::line("\$event['data']['challenge']"), "Offset 'challenge' might not exist on"],
+            [self::line("\$event['data']['challenge']"), 'Access to protected property Flashpi\\Exception\\ApiException::$code.'],
         ];
         $reported = self::analyse();
         foreach ($expected as [$line, $fragment]) {

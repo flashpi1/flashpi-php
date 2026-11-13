@@ -52,4 +52,12 @@ final class TypesMisuse
         self::options(['idempotencykey' => 'order-1']);
         self::options(['language' => 'fr']);
     }
+
+    public static function client(\Flashpi\Exception\ApiException $error, string $body): string
+    {
+        new \Flashpi\Flashpi(language: 'fr');
+        $event = \Flashpi\Flashpi::unwrapWebhook($body, [], 'whsec_x');
+
+        return $event['data']['challenge'] . $error->code;
+    }
 }
