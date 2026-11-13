@@ -5,6 +5,7 @@ parameters:
   level: max
   paths:
     - TypesMisuse.php
+    - ResourcesMisuse.php
   scanDirectories:
     - ../../../../src
   tmpDir: ../../../../.phpstan.cache/invalid
