@@ -193,6 +193,11 @@ final class GeneratorTest extends TestCase
         yield 'schema that is a list' => [['A' => [['type' => 'string']]], 'expected a schema object'];
         yield 'enum that is not a list' => [['A' => ['type' => 'string', 'enum' => ['a' => 'b']]], 'expected a list'];
         yield 'type that is not text' => [['A' => ['type' => [1]]], 'expected a string'];
+        yield 'enum value that ends the comment' => [['A' => ['type' => 'string', 'enum' => ['x*/ echo "ran"; /*']]], '"x*/ echo \"ran\"; /*" cannot be written in a PHPDoc comment'];
+        yield 'member name that ends the comment' => [['A' => ['type' => 'object', 'properties' => ['x*/ echo 1; /*' => ['type' => 'string']]]], 'cannot be written in a PHPDoc comment'];
+        yield 'enum value with a line break' => [['A' => ['type' => 'string', 'enum' => ["a\n * @phpstan-type Evil int"]]], '"a\n * @phpstan-type Evil int" cannot be written'];
+        yield 'member name with a line break' => [['A' => ['type' => 'object', 'properties' => ["a\rb" => ['type' => 'string']]]], 'cannot be written in a PHPDoc comment'];
+        yield 'enum value with bytes that are not UTF-8' => [['A' => ['type' => 'string', 'enum' => ["\xFF*/"]]], "\"\u{FFFD}*/\" cannot be written"];
     }
 
     /**

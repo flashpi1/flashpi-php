@@ -679,6 +679,12 @@ final class Generator
             return (string) $value;
         }
         if (\is_string($value)) {
+            // Written inside a PHPDoc comment: `*/` would end it and turn the rest into PHP code,
+            // and a line break would start a tag of its own.
+            if (str_contains($value, '*/') || preg_match('/[\x00-\x1f\x7f]/', $value) === 1) {
+                throw new GenerationError("{$where}: " . json_encode($value, \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE) . ' cannot be written in a PHPDoc comment');
+            }
+
             return "'" . str_replace(['\\', "'"], ['\\\\', "\\'"], $value) . "'";
         }
 
