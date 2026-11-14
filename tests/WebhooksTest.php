@@ -91,6 +91,11 @@ final class WebhooksTest extends TestCase
     {
         $secret = ' ' . substr(self::FLASHPI['secret'], 6) . "\n";
         self::assertSame('verified', self::reason(self::FLASHPI['body'], self::headers(self::FLASHPI), $secret, now: self::at(self::FLASHPI)));
+        // What JavaScript's trim() removes, as the Node SDK trims it.
+        foreach ([self::FLASHPI['secret'] . "\u{A0}", self::FLASHPI['secret'] . "\f", "\u{FEFF}" . self::FLASHPI['secret'], "\u{3000}" . self::FLASHPI['secret'] . "\u{2028}"] as $secret) {
+            self::assertSame('verified', self::reason(self::FLASHPI['body'], self::headers(self::FLASHPI), $secret, now: self::at(self::FLASHPI)));
+        }
+        self::assertSame('invalid_secret', self::reason(self::FLASHPI['body'], self::headers(self::FLASHPI), "\u{A0}\u{FEFF}", now: self::at(self::FLASHPI)));
     }
 
     /**

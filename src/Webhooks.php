@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Flashpi;
 
 use Flashpi\Exception\WebhookVerificationException;
+use Flashpi\Internal\Validate;
 use Flashpi\Types\SdkTypes;
 
 /**
@@ -169,13 +170,15 @@ final class Webhooks
      */
     private static function key(#[\SensitiveParameter] mixed $secret): string
     {
-        if (!\is_string($secret) || trim($secret) === '') {
+        // Trimmed as the Node SDK's trim() trims it: a secret copied with a no-break space or read
+        // from a file that starts with a byte order mark still works.
+        $encoded = \is_string($secret) ? Validate::jsTrim($secret) : '';
+        if ($encoded === '') {
             throw new WebhookVerificationException(
                 WebhookVerificationException::INVALID_SECRET,
                 'The webhook secret is empty: copy it from the console or webhookEndpoints->getSecret()',
             );
         }
-        $encoded = trim($secret);
         if (str_starts_with($encoded, self::SECRET_PREFIX)) {
             $encoded = substr($encoded, \strlen(self::SECRET_PREFIX));
         }

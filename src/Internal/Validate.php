@@ -217,7 +217,11 @@ final class Validate
         return null;
     }
 
-    private static function jsTrim(#[\SensitiveParameter] string $value): string
+    /**
+     * A string without what JavaScript's `trim()` removes around it: Unicode white space, line
+     * breaks and the byte order mark.
+     */
+    public static function jsTrim(#[\SensitiveParameter] string $value): string
     {
         $trimmed = preg_replace('/\A' . self::JS_SPACE . '+|' . self::JS_SPACE . '+\z/u', '', $value);
 
