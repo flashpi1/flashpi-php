@@ -22,7 +22,7 @@ final class Archive
 
     public const OPTIONAL = ['CHANGELOG.md'];
 
-    public const REQUIRE = ['php' => '^8.2', 'ext-json' => '*', 'guzzlehttp/guzzle' => '^7.8.2 || ^8.0'];
+    public const REQUIRE = ['php' => '^8.2', 'ext-json' => '*', 'guzzlehttp/guzzle' => '^7.15.2 || ^8.0.1'];
 
     private const FENCED_CODE = '/^```.*?^```/ms';
 
