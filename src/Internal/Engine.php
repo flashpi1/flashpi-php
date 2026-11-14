@@ -412,12 +412,13 @@ final class Engine
 
     /**
      * What a failed transfer means: a timeout or another failure of the transfer (both retried),
-     * or anything else (a bug, an invalid Guzzle option), thrown as it is.
+     * or anything else (a bug in a middleware, an invalid Guzzle option), not retried.
      *
      * Every failure of a Guzzle transfer counts, whatever its class: Guzzle 7 and 8 classify them
      * differently (Guzzle 8's stream handler reports a timeout while waiting for the headers as a
-     * plain RequestException). Guzzle's exception is never kept as the previous one: it holds the
-     * request, whose Authorization header carries the API key.
+     * plain RequestException). No error of the HTTP client is kept or thrown as it is: the frames
+     * of its trace and Guzzle's exceptions hold the request, whose Authorization header carries
+     * the API key. Only its class and message are kept; an \InvalidArgumentException stays one.
      */
     private function transferError(#[\SensitiveParameter] \Throwable $error, RequestSpec $spec, Call $call, float $deadline): \Throwable
     {
@@ -426,7 +427,9 @@ final class Engine
             && !$error instanceof NetworkExceptionInterface
             && !$error instanceof RequestExceptionInterface
         ) {
-            return $error;
+            $message = "{$spec->method} {$call->url} was not sent: " . $error::class . ': ' . self::reason($error);
+
+            return $error instanceof \InvalidArgumentException ? new \InvalidArgumentException($message) : new FlashpiException($message);
         }
         if (self::isTimeout($error) || $this->clock->now() >= $deadline) {
             return $this->timeoutError($spec, $call);

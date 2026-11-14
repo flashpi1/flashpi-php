@@ -83,8 +83,12 @@ and are listed so they can be confirmed or changed before 1.0.
   differently, and Guzzle 8's stream handler reports a timeout while waiting for the headers as a
   plain `RequestException`, so the class cannot tell a refused request from a network failure as
   httpx's could. Guzzle's exception is never kept as the previous one: it holds the request,
-  whose `Authorization` header carries the API key. Other throwables (a bug in a middleware, an
-  invalid Guzzle option) are thrown as they are. A caller's client that throws for error
+  whose `Authorization` header carries the API key. Other throwables of the HTTP client (a bug
+  in a middleware, an invalid Guzzle option) are not retried and not thrown as they are either,
+  since the frames of their trace hold that request: an `\InvalidArgumentException` becomes a new
+  one and anything else a `FlashpiException`, each with the original's class and message and no
+  previous exception. Node wraps every failure of `fetch()` the same way; Python lets other
+  errors through, but httpx's request hides the key. A caller's client that throws for error
   statuses (`BadResponseException`) gets its response read as the API's answer. An answer whose
   body ends before its `Content-Length` is a retried `ConnectionException` too, whatever the
   handler: curl and Guzzle 8's stream handler fail the transfer, and the SDK compares the length

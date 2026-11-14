@@ -16,11 +16,19 @@ use Flashpi\Exception\PermissionDeniedException;
 use Flashpi\Exception\RateLimitException;
 use Flashpi\Exception\TimeoutException;
 use Flashpi\Exception\UnprocessableEntityException;
+use Flashpi\Flashpi;
 use Flashpi\Tests\Support\FakeClock;
+use Flashpi\Tests\Support\MockApi;
 use Flashpi\Tests\Support\Replies;
+use Flashpi\Tests\Support\Secrets;
 use Flashpi\Tests\Support\TestCase;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\CurlHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Message\RequestInterface;
 
 /**
  * Errors, retries and recoveries (Python: tests/test_retries.py).
@@ -293,10 +301,40 @@ final class RetriesTest extends TestCase
         self::assertSame([], $api->sent);
     }
 
-    public function testThrowsOtherErrorsOfTheHttpClientAsTheyAre(): void
+    public function testThrowsOtherErrorsOfTheHttpClientWithoutTheirTrace(): void
     {
         $api = self::api([new \LogicException('a bug in a middleware')]);
-        self::throws(\LogicException::class, static fn() => $api->things->status(), '/^a bug in a middleware$/');
+        $error = self::throws(FlashpiException::class, static fn() => $api->things->status());
+        self::assertSame(FlashpiException::class, $error::class);
+        self::assertSame('GET https://api.flashpi.com.ec/v1/status was not sent: LogicException: a bug in a middleware', $error->getMessage());
+        self::assertNull($error->getPrevious());
+        self::assertCount(1, $api->sent);
+
+        $api = self::api([new \InvalidArgumentException('SSL CA bundle not found')]);
+        $error = self::throws(\InvalidArgumentException::class, static fn() => $api->things->create([], ['idempotencyKey' => 'order-1']));
+        self::assertSame(\InvalidArgumentException::class, $error::class);
+        self::assertSame('POST https://api.flashpi.com.ec/v1/things was not sent: InvalidArgumentException: SSL CA bundle not found', $error->getMessage());
+        self::assertNull($error->getPrevious());
+        self::assertCount(1, $api->sent);
+    }
+
+    public function testKeepsTheKeyOutOfTheTraceOfAnErrorThrownInsideGuzzle(): void
+    {
+        // Thrown from a middleware, inside Guzzle: the frames of its own trace hold the request.
+        $throwing = static function (HandlerStack $stack): void {
+            $stack->push(Middleware::mapRequest(static function (RequestInterface $request): RequestInterface {
+                throw new \LogicException('a bug in a middleware');
+            }));
+        };
+        $api = new MockApi([], [], null, $throwing);
+        $error = self::throws(FlashpiException::class, static fn() => $api->things->status(), '/was not sent: LogicException: a bug in a middleware$/');
+        self::assertSame([], Secrets::inException($error, Replies::TEST_KEY));
+
+        // An invalid option of the caller's client, which Guzzle 7's curl handler refuses.
+        $http = new Client(['handler' => HandlerStack::create(new CurlHandler()), 'verify' => '/nonexistent/ca.pem']);
+        $client = new Flashpi(Replies::TEST_KEY, maxRetries: 0, httpClient: $http);
+        $error = self::throws(\InvalidArgumentException::class, static fn() => $client->status->get(), '/^GET https:\/\/api\.flashpi\.com\.ec\/v1\/status was not sent: (GuzzleHttp\\\\Exception\\\\)?InvalidArgumentException: SSL CA bundle not found/');
+        self::assertSame([], Secrets::inException($error, Replies::TEST_KEY));
     }
 
     public function testTakesTheAnswerOfAClientThatThrowsForErrorStatuses(): void

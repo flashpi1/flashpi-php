@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Flashpi\Tests\Support;
 
+use Psr\Http\Message\RequestInterface;
+
 /**
  * Where a secret can show: what error trackers and logs record of an exception (its message, its
  * string form, the arguments of every frame of its trace and of the exceptions it chains), and
@@ -18,7 +20,8 @@ final class Secrets
      *
      * The arguments of the SDK's frames are searched (the caller's own frames hold what the
      * caller passed), objects as var_export() shows them: every property, private ones included.
-     * The redacted arguments (#[\SensitiveParameter]) are not.
+     * The redacted arguments (#[\SensitiveParameter]) are not. In every frame, a request whose
+     * Authorization header holds the secret counts.
      *
      * @return list<string>
      */
@@ -34,6 +37,13 @@ final class Secrets
             }
             foreach ($current->getTrace() as $index => $frame) {
                 $class = $frame['class'] ?? '';
+                // A request in any frame (Guzzle's, a middleware's) carries the API key in its
+                // Authorization header.
+                foreach ($frame['args'] ?? [] as $argument) {
+                    if ($argument instanceof RequestInterface && str_contains($argument->getHeaderLine('Authorization'), $secret)) {
+                        $found[] = "request in frame {$index}: " . $class . ($frame['type'] ?? '') . $frame['function'];
+                    }
+                }
                 if (!str_starts_with($class, 'Flashpi\\') || str_starts_with($class, 'Flashpi\\Tests\\')) {
                     continue;
                 }
