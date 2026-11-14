@@ -82,6 +82,17 @@ final class ReadmeTest extends TestCase
         self::assertStringContainsString('matches the READMEs', self::read($stdout));
     }
 
+    public function testNoExampleReadsTheApiKeyWithGetenv(): void
+    {
+        // The client reads FLASHPI_API_KEY from $_ENV, $_SERVER, then getenv(). Dotenv loaders
+        // fill only the first two, where `(string) getenv(...)` would pass an empty key.
+        foreach (Examples::READMES as $readme) {
+            foreach (Examples::blocks($readme, (string) file_get_contents(self::ROOT . "/{$readme}")) as $block) {
+                self::assertStringNotContainsString("getenv('FLASHPI_API_KEY')", $block->code, $block->where());
+            }
+        }
+    }
+
     public function testRefusesBadArguments(): void
     {
         self::assertSame(2, $this->command('publish'));

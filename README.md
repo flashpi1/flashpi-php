@@ -390,7 +390,7 @@ certificado solo para el modo de la clave que usas (pruebas o producción).
 use Flashpi\Flashpi;
 
 $flashpi = new Flashpi(
-    apiKey: (string) getenv('FLASHPI_API_KEY'), // por defecto, la variable FLASHPI_API_KEY
+    apiKey: 'fp_test_...', // sin ella, se lee FLASHPI_API_KEY ($_ENV, $_SERVER o getenv())
     language: 'es', // idioma de los mensajes: 'en' (por defecto) o 'es'
     timeout: 60, // segundos por intento (con waitForAuthorization, al menos la espera + 15 s)
     maxRetries: 2, // 0 desactiva los reintentos

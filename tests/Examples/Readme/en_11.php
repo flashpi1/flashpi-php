@@ -15,7 +15,7 @@ namespace Flashpi\Tests\Examples\Readme\En11;
 use Flashpi\Flashpi;
 
 $flashpi = new Flashpi(
-    apiKey: (string) getenv('FLASHPI_API_KEY'), // defaults to the FLASHPI_API_KEY variable
+    apiKey: 'fp_test_...', // omit it to read FLASHPI_API_KEY ($_ENV, $_SERVER or getenv())
     language: 'es', // language of the messages: 'en' (default) or 'es'
     timeout: 60, // seconds per attempt (at least the SRI wait + 15 s with waitForAuthorization)
     maxRetries: 2, // 0 turns retries off
