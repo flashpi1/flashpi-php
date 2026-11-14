@@ -89,7 +89,7 @@ jobs:
           tools: composer:v2
       - name: Install dependencies with Guzzle ${{ matrix.guzzle }}
         env:
-          GUZZLE: ${{ matrix.guzzle == '7' && '^7.15.2' || '^8.0.1' }}
+          GUZZLE: ${{ matrix.guzzle == '7' && '^7.15.2' || '^8.3' }}
         run: |
           composer require --no-update --no-interaction "guzzlehttp/guzzle:${GUZZLE}"
           composer update --no-interaction --no-progress
@@ -120,13 +120,13 @@ jobs:
           coverage: none
           tools: composer:v2
       # The oldest versions composer.json allows with each Guzzle major: Guzzle 7.15.2 with psr7
-      # 2.13.0 and promises 2.5.1, and Guzzle 8.0.1 with psr7 3.0.0 and promises 3.0.0 (left
+      # 2.13.0 and promises 2.5.1, and Guzzle 8.3.0 with psr7 3.2.0 and promises 3.1.0 (left
       # alone, --prefer-lowest always picks Guzzle 7). Composer 2.9 and later skip versions with
       # security advisories, here as for a user, so a new advisory would quietly move this job to
       # newer ones: the log shows what was tested.
       - name: Install the lowest dependencies with Guzzle ${{ matrix.guzzle }}
         env:
-          GUZZLE: ${{ matrix.guzzle == '7' && '^7.15.2' || '^8.0.1' }}
+          GUZZLE: ${{ matrix.guzzle == '7' && '^7.15.2' || '^8.3' }}
         run: |
           composer update --prefer-lowest --prefer-stable --no-interaction --no-progress --with "guzzlehttp/guzzle:${GUZZLE}"
           composer show | grep -E '^(guzzlehttp/(guzzle|psr7|promises)|phpunit/phpunit) '
@@ -161,7 +161,7 @@ jobs:
       - name: Install the archive in a clean project and use it, with Guzzle 7 and 8
         run: |
           tar -xf build/package.tar -C "$RUNNER_TEMP"
-          for guzzle in '^7.15.2' '^8.0.1'; do
+          for guzzle in '^7.15.2' '^8.3'; do
             app="${RUNNER_TEMP}/app-${guzzle//[^0-9]/}"
             mkdir -p "$app"
             (
