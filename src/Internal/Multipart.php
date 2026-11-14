@@ -13,16 +13,17 @@ namespace Flashpi\Internal;
  * Guzzle's own would keep only its base name, and psr7 2 would not escape it, letting a quote or
  * a line break into the part's headers.
  *
- * The parts are kept inside a closure: var_dump(), print_r(), var_export() and serialize() never
- * show a certificate or its password, and neither does a stack trace that has this object as an
- * argument. Only the part names are shown.
+ * The parts are kept in a \SensitiveParameterValue, which shows nothing of what it holds:
+ * var_dump(), print_r(), var_export(), a cast to array, Symfony's VarDumper and a stack trace
+ * that has this object as an argument never show a certificate or its password, and serialize()
+ * fails. Only the part names are shown.
  *
  * @internal
  */
 final class Multipart
 {
-    /** @var \Closure(): list<array{name: string, contents: string, headers?: array<string, string>}> */
-    private readonly \Closure $parts;
+    /** @var \SensitiveParameterValue<list<array{name: string, contents: string, headers?: array<string, string>}>> */
+    private readonly \SensitiveParameterValue $parts;
 
     /** @var list<string> */
     private readonly array $names;
@@ -51,7 +52,7 @@ final class Multipart
                 ],
             ];
         }
-        $this->parts = static fn(): array => $parts;
+        $this->parts = new \SensitiveParameterValue($parts);
         $this->names = [...array_keys($fields), ...array_keys($files)];
     }
 
@@ -62,7 +63,7 @@ final class Multipart
      */
     public function parts(): array
     {
-        return ($this->parts)();
+        return $this->parts->getValue();
     }
 
     /**

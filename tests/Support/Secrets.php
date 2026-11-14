@@ -48,17 +48,23 @@ final class Secrets
     }
 
     /**
-     * Whether var_dump(), print_r() or var_export() of `$value` shows `$secret`.
+     * Whether var_dump() or print_r() of `$value` (or of `(array) $value`) shows `$secret`, or
+     * what var_export() and Symfony's VarDumper show: every property, private ones included, and
+     * what a closure captured and is bound to.
      */
     public static function inDumps(mixed $value, string $secret): bool
     {
         ob_start();
         var_dump($value);
+        if (\is_object($value)) {
+            var_dump((array) $value);
+        }
         $dump = (string) ob_get_clean();
         $seen = [];
 
         return str_contains($dump, $secret)
             || str_contains(print_r($value, true), $secret)
+            || (\is_object($value) && str_contains(print_r((array) $value, true), $secret))
             || self::shows($value, $secret, $seen);
     }
 
@@ -79,8 +85,12 @@ final class Secrets
             }
             $seen[spl_object_id($value)] = true;
             if ($value instanceof \Closure) {
-                // var_export() shows a closure as \Closure::__set_state(array()).
-                return str_contains(var_export($value, true), $secret);
+                // var_dump(), print_r() and VarDumper show what a closure captured and the object
+                // it is bound to.
+                $function = new \ReflectionFunction($value);
+
+                return self::shows($function->getStaticVariables(), $secret, $seen, $depth + 1)
+                    || self::shows($function->getClosureThis(), $secret, $seen, $depth + 1);
             }
             $value = (array) $value;
         }

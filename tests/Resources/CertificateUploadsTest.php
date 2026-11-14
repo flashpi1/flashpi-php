@@ -333,6 +333,37 @@ final class CertificateUploadsTest extends TestCase
     }
 
     /**
+     * The whole of an upload's error, every frame and argument of its trace included, as
+     * print_r() and var_dump() print it: through withResponse() too, answered or not.
+     */
+    public function testNoDumpOfAnUploadErrorShowsTheFileOrThePassword(): void
+    {
+        $upload = ['file' => self::SECRET_P12, 'password' => self::PASSWORD];
+        foreach ([Replies::problem(422, 'invalid_certificate'), Replies::networkError()] as $reply) {
+            foreach (['upload', 'view upload', 'create', 'view create'] as $call) {
+                $api = self::api([$reply], ['maxRetries' => 0]);
+                $error = null;
+                try {
+                    match ($call) {
+                        'upload' => $api->client->issuers->certificates->upload(self::ISSUER, $upload),
+                        'view upload' => $api->client->issuers->certificates->withResponse()->upload(self::ISSUER, $upload),
+                        'create' => $api->client->issuerOnboardings->create($upload),
+                        'view create' => $api->client->issuerOnboardings->withResponse()->create($upload),
+                    };
+                } catch (FlashpiException $caught) {
+                    $error = $caught;
+                }
+                self::assertNotNull($error, $call);
+                ob_start();
+                var_dump($error);
+                $dumps = (string) ob_get_clean() . print_r($error, true) . $error;
+                self::assertStringNotContainsString(self::PASSWORD, $dumps, $call);
+                self::assertStringNotContainsString('PRIVATE-KEY-OF-THE-ISSUER', $dumps, $call);
+            }
+        }
+    }
+
+    /**
      * The methods that upload a .p12.
      *
      * @return list<string>

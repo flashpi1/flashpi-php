@@ -181,10 +181,14 @@ and are listed so they can be confirmed or changed before 1.0.
   `HeaderBag`, a generator), read once; `now` is a date or Unix seconds. A `Stringable` payload
   is read once too: `unwrap()` decodes the bytes it verified, so a PSR-7 body that cannot seek
   works, and one that would read otherwise a second time cannot slip in unverified JSON.
-- **Secrets.** The API key lives in a closure inside the client's configuration, and a
-  certificate upload's parts in one inside its multipart body: `var_dump()`, `print_r()`,
-  `var_export()`, a cast to array and `serialize()` never show them (serializing a client fails).
-  `__debugInfo()` shows only what is safe, and every parameter that holds the key, a webhook
+- **Secrets.** The API key lives in a `\SensitiveParameterValue` inside the client's
+  configuration, and a certificate upload's parts in one inside its multipart body. It shows
+  nothing of what it holds, so `var_dump()`, `print_r()`, `var_export()`, a cast to array
+  followed by any of them and Symfony's VarDumper (`dump()`, `dd()`, Laravel's Tinker) never
+  show them, and `serialize()` fails (serializing a client fails). A closure would not do: its
+  captured variables show in `var_dump()` of a cast and in VarDumper. `withResponse()` passes
+  the call's arguments through no closure either (see above). `__debugInfo()` shows only what is
+  safe, and every parameter that holds the key, a webhook
   secret or its key, a .p12, its password, a Guzzle request or a Guzzle exception is marked
   `#[\SensitiveParameter]`, so stack traces hide it. PHP's traces carry arguments, not local
   variables, so the Python SDK's work on frame locals has no counterpart.

@@ -7,15 +7,16 @@ namespace Flashpi\Internal;
 /**
  * The settings of a client that its requests need.
  *
- * The API key is kept inside a closure: var_dump(), print_r(), var_export(), a cast to array and
- * serialize() never show it.
+ * The API key is kept in a \SensitiveParameterValue, which shows nothing of what it holds:
+ * var_dump(), print_r(), var_export(), a cast to array, Symfony's VarDumper (dump(), dd()) and a
+ * stack trace never show the key, and serialize() fails.
  *
  * @internal
  */
 final class ClientConfig
 {
-    /** @var \Closure(): string */
-    private readonly \Closure $apiKey;
+    /** @var \SensitiveParameterValue<string> */
+    private readonly \SensitiveParameterValue $apiKey;
 
     /**
      * @param array<string, string> $defaultHeaders Checked by Validate::headers().
@@ -29,7 +30,7 @@ final class ClientConfig
         public readonly ?string $language,
         public readonly array $defaultHeaders,
     ) {
-        $this->apiKey = static fn(): string => $apiKey;
+        $this->apiKey = new \SensitiveParameterValue($apiKey);
     }
 
     /**
@@ -39,7 +40,7 @@ final class ClientConfig
      */
     public function environment(): string
     {
-        return str_starts_with(($this->apiKey)(), 'fp_test_') ? 'test' : 'live';
+        return str_starts_with($this->key(), 'fp_test_') ? 'test' : 'live';
     }
 
     /**
@@ -47,7 +48,7 @@ final class ClientConfig
      */
     public function authorization(): string
     {
-        return 'Bearer ' . ($this->apiKey)();
+        return 'Bearer ' . $this->key();
     }
 
     /**
@@ -62,5 +63,10 @@ final class ClientConfig
             'language' => $this->language,
             'defaultHeaders' => array_keys($this->defaultHeaders),
         ];
+    }
+
+    private function key(): string
+    {
+        return $this->apiKey->getValue();
     }
 }
