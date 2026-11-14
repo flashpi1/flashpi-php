@@ -75,6 +75,13 @@ final class Engine
     /** Headers of a 404 that a 204 built from it must not carry. */
     private const BODY_HEADERS = ['content-length', 'content-type', 'content-encoding', 'transfer-encoding'];
 
+    /**
+     * The members of the API's request bodies that are lists (each needs at least one item). An
+     * empty PHP array under any other name is an empty object: tests/OperationsTest.php checks this
+     * list against the contract.
+     */
+    public const LIST_FIELDS = ['enabledEvents', 'items', 'payments', 'reasons', 'recipients', 'supportingDocuments', 'taxes', 'withholdings'];
+
     private Clock $clock;
 
     /**
@@ -550,21 +557,43 @@ final class Engine
     }
 
     /**
-     * Compact UTF-8 JSON, like JSON.stringify. An empty array is the empty object every body of
-     * the API is.
+     * Compact UTF-8 JSON, like JSON.stringify.
+     *
+     * PHP has one empty array for an empty list and an empty object: it is sent as a list under a
+     * name of LIST_FIELDS, and as an object anywhere else (the body itself, `additionalInfo`,
+     * `options`, `branding`, ...), as the API expects.
      *
      * @throws \InvalidArgumentException When the body cannot be JSON (NaN, INF, invalid UTF-8).
      */
     private static function json(mixed $body): string
     {
-        if ($body === []) {
-            return '{}';
-        }
         try {
-            return json_encode($body, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            return json_encode(self::objects($body, null), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         } catch (\JsonException $error) {
             throw new \InvalidArgumentException('The request body cannot be sent as JSON: ' . $error->getMessage(), 0, $error);
         }
+    }
+
+    /**
+     * A value of a body with its empty arrays turned into empty objects, except those of the
+     * members LIST_FIELDS names. Objects (JsonSerializable) are left as they are.
+     *
+     * @param int|string|null $name The member the value is the value of (null for the body).
+     */
+    private static function objects(mixed $value, int|string|null $name): mixed
+    {
+        if ($value === []) {
+            return \is_string($name) && \in_array($name, self::LIST_FIELDS, true) ? [] : new \stdClass();
+        }
+        if (!\is_array($value)) {
+            return $value;
+        }
+        $result = [];
+        foreach ($value as $key => $item) {
+            $result[$key] = self::objects($item, $key);
+        }
+
+        return $result;
     }
 
     /**

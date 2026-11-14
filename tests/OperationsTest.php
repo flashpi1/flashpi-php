@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Flashpi\Tests;
 
 use Flashpi\Flashpi;
+use Flashpi\Internal\Engine;
 use Flashpi\Internal\Resource;
 use Flashpi\Internal\ResponseView;
 use Flashpi\Page;
@@ -123,6 +124,21 @@ final class OperationsTest extends TestCase
             preg_match_all('/^ \* @method (.+)$/m', (string) $class->getDocComment(), $tags);
             self::assertSame($expected, $tags[1], $name);
         }
+    }
+
+    public function testTheListsOfTheEngineAreTheListsOfTheRequestBodies(): void
+    {
+        $members = Contract::bodyMembers();
+        // An empty array is sent as [] under these names and as {} under any other: no member may
+        // be a list in one body and an object in another, and an empty list is never valid.
+        self::assertSame(array_keys($members['lists']), Engine::LIST_FIELDS);
+        self::assertSame([], array_values(array_intersect(Engine::LIST_FIELDS, $members['objects'])));
+        foreach ($members['lists'] as $name => $minItems) {
+            foreach ($minItems as $value) {
+                self::assertTrue(\is_int($value) && $value >= 1, "{$name} accepts an empty list");
+            }
+        }
+        self::assertContains('additionalInfo', $members['objects']);
     }
 
     /**

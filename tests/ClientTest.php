@@ -334,6 +334,19 @@ final class ClientTest extends TestCase
         ));
     }
 
+    public function testSendsEveryNestedEmptyArrayAsAnObjectButTheContractsLists(): void
+    {
+        $api = self::api([Replies::json([], 201), Replies::json([], 201), Replies::json([], 200)]);
+        $api->things->issue(['issuerId' => 'x', 'additionalInfo' => [], 'options' => [], 'items' => [['description' => 'a', 'additionalDetails' => []]], 'payments' => []]);
+        $api->things->create(['items' => [[]], 'enabledEvents' => [], 'metadata' => ['items' => []], 'list' => [[], ['a']]]);
+        $api->things->update(Replies::ID, ['taxProfile' => [], 'branding' => []]);
+        self::assertSame([
+            '{"issuerId":"x","additionalInfo":{},"options":{},"items":[{"description":"a","additionalDetails":{}}],"payments":[]}',
+            '{"items":[{}],"enabledEvents":[],"metadata":{"items":[]},"list":[{},["a"]]}',
+            '{"taxProfile":{},"branding":{}}',
+        ], array_map(static fn($request): string => (string) $request->getBody(), $api->sent));
+    }
+
     public function testSendsNoBodyWhenThereIsNone(): void
     {
         $api = self::api([Replies::json([], 202)]);

@@ -94,8 +94,13 @@ and are listed so they can be confirmed or changed before 1.0.
   curl extension) limits each read only: there, an answer that trickles in is refused once it has
   arrived, not when the deadline passes. The same applies to a caller's client.
 - **Bodies and answers.** A JSON body is encoded once with `JSON_UNESCAPED_SLASHES` and
-  `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; an empty array is sent as `{}`, since every
-  request body of the API is an object; objects (`JsonSerializable`) are accepted. Answers are
+  `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; objects (`JsonSerializable`) are accepted.
+  PHP has one empty array for an empty list and an empty object, so an empty array, at any depth,
+  is sent as `[]` under the names the contract types as lists (`items`, `payments`, `taxes`, ...:
+  `Engine::LIST_FIELDS`, checked against `openapi/openapi.json` by `tests/OperationsTest.php`)
+  and as `{}` anywhere else (the body itself, `additionalInfo`, `options`, `branding`, ...). The
+  API then answers an empty list as Python's SDK gets it answered (too short), and an empty
+  object is valid. Answers are
   decoded into associative arrays, invalid UTF-8 replaced. Text and bytes answers (XML, PDF) are
   the body as it came: PHP strings are bytes. The PSR-7 response an `ApiResponse` holds has its
   body rewound into a new stream, so it can be read again.

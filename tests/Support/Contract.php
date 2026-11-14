@@ -37,6 +37,79 @@ final class Contract
     }
 
     /**
+     * The members of every JSON request body, at any depth: those that are lists, each with the
+     * `minItems` of every place it appears, and those that are objects.
+     *
+     * @return array{lists: array<string, list<mixed>>, objects: list<string>}
+     */
+    public static function bodyMembers(): array
+    {
+        $contract = self::map(json_decode((string) file_get_contents(self::FILE), true, 512, \JSON_THROW_ON_ERROR));
+        $schemas = self::map(self::map($contract['components'] ?? null)['schemas'] ?? null);
+        $lists = [];
+        $objects = [];
+        $seen = [];
+        $resolve = static function (mixed $schema) use ($schemas): array {
+            $schema = self::map($schema);
+            while (\is_string($schema['$ref'] ?? null)) {
+                $schema = self::map($schemas[(string) self::reference($schema)] ?? null);
+            }
+
+            return $schema;
+        };
+        $walk = static function (mixed $schema) use (&$walk, $resolve, &$lists, &$objects, &$seen): void {
+            $reference = self::reference($schema);
+            if ($reference !== null) {
+                if (isset($seen[$reference])) {
+                    return;
+                }
+                $seen[$reference] = true;
+            }
+            $schema = $resolve($schema);
+            foreach (['allOf', 'oneOf', 'anyOf'] as $keyword) {
+                foreach (self::list($schema[$keyword] ?? []) as $part) {
+                    $walk($part);
+                }
+            }
+            foreach (['items', 'additionalProperties'] as $keyword) {
+                if (\is_array($schema[$keyword] ?? null)) {
+                    $walk($schema[$keyword]);
+                }
+            }
+            foreach (self::map($schema['properties'] ?? []) as $name => $property) {
+                $resolved = $resolve($property);
+                $types = (array) ($resolved['type'] ?? []);
+                foreach (['allOf', 'oneOf', 'anyOf'] as $keyword) {
+                    foreach (self::list($resolved[$keyword] ?? []) as $part) {
+                        $types = [...$types, ...(array) ($resolve($part)['type'] ?? [])];
+                    }
+                }
+                if (\in_array('array', $types, true)) {
+                    $lists[(string) $name][] = $resolved['minItems'] ?? null;
+                }
+                if (\in_array('object', $types, true) || isset($resolved['properties'])) {
+                    $objects[(string) $name] = true;
+                }
+                $walk($property);
+            }
+        };
+        foreach (self::map($contract['paths'] ?? null) as $item) {
+            foreach (self::map($item) as $method => $spec) {
+                if (\in_array($method, self::METHODS, true)) {
+                    $content = self::map(self::map(self::map($spec)['requestBody'] ?? [])['content'] ?? []);
+                    if (isset($content['application/json'])) {
+                        $walk(self::map($content['application/json'])['schema'] ?? null);
+                    }
+                }
+            }
+        }
+        ksort($lists);
+        ksort($objects);
+
+        return ['lists' => $lists, 'objects' => array_keys($objects)];
+    }
+
+    /**
      * @return array<string, Operation>
      */
     private static function read(): array
