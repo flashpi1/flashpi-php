@@ -16,7 +16,7 @@ Ecuador, para PHP.
 - Verificación de firmas de webhooks (Standard Webhooks) para Laravel, Symfony o PHP sin
   framework.
 - PHP 8.2 o superior. Una sola dependencia: [Guzzle](https://docs.guzzlephp.org/) 7.15.2 o
-  superior, u 8.0.1 o superior (Laravel 11, 12 y 13).
+  superior, u 8.3 o superior (Laravel 11, 12 y 13).
 
 ## Instalación
 
@@ -428,9 +428,8 @@ $flashpi = new Flashpi(httpClient: new Client(['proxy' => 'http://proxy.interno:
 
 En las pruebas, un cliente con el `MockHandler` de Guzzle responde en lugar de la API. Sin la
 extensión curl, el stream handler de Guzzle puede dejar que encabezados que llegan lentamente
-alarguen un intento más allá de su tiempo límite (la respuesta se rechaza después), y puede no
-notar una respuesta cortada (Guzzle 7, y Guzzle 8 antes de 8.3); instala `ext-curl` en
-producción.
+alarguen un intento más allá de su tiempo límite (la respuesta se rechaza después), y el de
+Guzzle 7 puede no notar una respuesta cortada; instala `ext-curl` en producción.
 
 ## Solo en el servidor
 

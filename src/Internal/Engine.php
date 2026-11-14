@@ -370,10 +370,10 @@ final class Engine
      * Content-Length of its own, so it is not compared.
      *
      * Guzzle 7's stream handler also returns, as they arrived, a chunked answer cut before its
-     * last chunk (PHP's http wrapper hides it; Guzzle 8's notices it from 8.3.0 on) and a
-     * compressed answer cut short: nothing here can tell. The API frames its answers with
-     * Content-Length, so that needs an intermediary that re-frames them; ext-curl or Guzzle 8.3
-     * and later report it as a ConnectionException.
+     * last chunk (PHP's http wrapper hides it) and a compressed answer cut short: nothing here
+     * can tell. The API frames its answers with Content-Length, so that needs an intermediary
+     * that re-frames them; ext-curl or Guzzle 8 (8.3 and later) report it as a
+     * ConnectionException.
      *
      * @throws ConnectionException
      */
