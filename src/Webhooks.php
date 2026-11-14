@@ -122,8 +122,11 @@ final class Webhooks
         int|float|null $tolerance = null,
         \DateTimeInterface|int|float|null $now = null,
     ): array {
-        $this->verifySignature($payload, $headers, $secret, $tolerance, $now);
-        $body = self::payload($payload);
+        // Read once: a PSR-7 body that cannot seek gives its bytes only once, and the bytes
+        // decoded must be the bytes verified.
+        $raw = $payload instanceof \Stringable ? (string) $payload : $payload;
+        $this->verifySignature($raw, $headers, $secret, $tolerance, $now);
+        $body = self::payload($raw);
         try {
             $event = json_decode($body, true, 512, \JSON_THROW_ON_ERROR | \JSON_INVALID_UTF8_SUBSTITUTE);
         } catch (\JsonException) {

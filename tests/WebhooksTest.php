@@ -9,6 +9,7 @@ use Flashpi\Flashpi;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\Secrets;
 use Flashpi\Webhooks;
+use GuzzleHttp\Psr7\NoSeekStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -298,6 +299,28 @@ final class WebhooksTest extends TestCase
         $client->webhooks->verifySignature(self::FLASHPI['body'], self::headers(self::FLASHPI), self::FLASHPI['secret'], now: self::at(self::FLASHPI));
         $this->expectException(WebhookVerificationException::class);
         Flashpi::verifyWebhookSignature(self::FLASHPI['body'], self::headers(self::FLASHPI, self::DECOY), self::FLASHPI['secret'], now: self::at(self::FLASHPI));
+    }
+
+    public function testReadsTheBodyOnceAndDecodesTheBytesItVerified(): void
+    {
+        $headers = self::headers(self::FLASHPI);
+        $now = self::at(self::FLASHPI);
+        $event = (new Webhooks())->unwrap(new NoSeekStream(Utils::streamFor(self::FLASHPI['body'])), $headers, self::FLASHPI['secret'], now: $now);
+        self::assertSame('invoice.authorized', $event['type']);
+
+        // A body that would read otherwise the second time is decoded as it was verified.
+        $changing = new class (self::FLASHPI['body']) implements \Stringable {
+            private int $reads = 0;
+
+            public function __construct(private readonly string $body) {}
+
+            public function __toString(): string
+            {
+                return $this->reads++ === 0 ? $this->body : str_replace('019a1b2c', 'forged00', $this->body);
+            }
+        };
+        $event = (new Webhooks())->unwrap($changing, $headers, self::FLASHPI['secret'], now: $now);
+        self::assertSame(self::FLASHPI['id'], $event['id']);
     }
 
     public function testThrowsBeforeDecodingWhenTheSignatureIsWrong(): void
