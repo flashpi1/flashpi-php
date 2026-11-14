@@ -118,6 +118,9 @@ final class Flashpi
      * @param float|null $timeout Seconds each attempt of a request may take, from sending it to
      *                            reading the whole answer (default 60). Issuing with
      *                            `options.waitForAuthorization` raises it to the wait plus 15 s.
+     *                            Without the curl extension (Guzzle's stream handler), headers
+     *                            that arrive slowly can keep an attempt going past it: the
+     *                            answer is then refused once they are complete.
      * @param int|null $maxRetries Retries after network errors, timeouts, 408, 429 and 5xx
      *                             (default 2; 0 turns them off).
      * @param Language|null $language Language of the API's messages: `en` (default) or `es`.
@@ -127,7 +130,9 @@ final class Flashpi
      *                                                   request).
      * @param ClientInterface|null $httpClient A Guzzle client to send the requests with (proxies,
      *                                         middleware, tests). The SDK never follows
-     *                                         redirects and sets each attempt's timeout on it.
+     *                                         redirects and sets each attempt's timeout on it;
+     *                                         with a stream handler, the timeout covers the
+     *                                         headers only between packets, as above.
      *
      * @throws FlashpiException A missing or malformed API key, or a setting out of range.
      * @throws \InvalidArgumentException A default header or language that cannot be sent.

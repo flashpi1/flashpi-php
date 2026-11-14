@@ -289,10 +289,12 @@ final class Engine
     /**
      * One attempt within its deadline, from sending it to reading the whole answer.
      *
-     * Guzzle's `timeout` limits the whole transfer (with the curl handler, and with Guzzle 8's
-     * stream handler); the answer is then read here, its body checked against the deadline as
-     * each chunk arrives, and the deadline checked once more at the end, so an answer whose end
-     * came late fails with any handler.
+     * Guzzle's `timeout` limits the whole transfer with the curl handler. The stream handler
+     * limits the headers only between packets (Guzzle 7 and 8), so headers that trickle in keep
+     * the attempt going until they are complete; Guzzle 8's limits the body to the deadline, and
+     * Guzzle 7's each read only. The answer is then read here, its body checked against the
+     * deadline as each chunk arrives, and the deadline checked once more at the end, so an answer
+     * whose end came late fails with any handler, once it has arrived.
      *
      * @return ApiResponse<mixed>|ApiException
      */

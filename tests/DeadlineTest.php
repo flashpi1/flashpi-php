@@ -136,6 +136,25 @@ final class DeadlineTest extends TestCase
     }
 
     #[Group('network')]
+    public function testHeadersThatTrickleInStopAtTheDeadlineWithCurlOnly(): void
+    {
+        // Headers of 90 bytes, 0.015 s apart: about 1.35 s for an attempt of 0.4 s.
+        $path = '/trickle-headers?delay=0.015';
+        $curl = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 0.4, maxRetries: 0);
+        $started = microtime(true);
+        self::throws(TimeoutException::class, static fn() => self::get($curl, $path), '/timed out after 0\.4 seconds$/');
+        self::assertLessThan(1.0, microtime(true) - $started);
+
+        // The stream handler (PHP without ext-curl) limits only the gaps between packets while the
+        // headers arrive: the attempt runs until they are complete, then fails its deadline.
+        $http = new Client(['handler' => HandlerStack::create(new StreamHandler())]);
+        $stream = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 0.4, maxRetries: 0, httpClient: $http);
+        $started = microtime(true);
+        self::throws(TimeoutException::class, static fn() => self::get($stream, $path), '/timed out after 0\.4 seconds$/');
+        self::assertGreaterThan(1.0, microtime(true) - $started);
+    }
+
+    #[Group('network')]
     public function testReadsAnAnswerThatArrivesInTimeOverASocket(): void
     {
         $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::url(), timeout: 5.0, maxRetries: 0);

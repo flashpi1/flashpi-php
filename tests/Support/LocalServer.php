@@ -5,25 +5,56 @@ declare(strict_types=1);
 namespace Flashpi\Tests\Support;
 
 /**
- * A `php -S` server on a free local port, for the tests that need real sockets. It answers one
- * request at a time: an answer a test gave up on ends at its next write.
+ * Local servers on free ports, for the tests that need real sockets. Each answers one request at
+ * a time: an answer a test gave up on ends at its next write.
+ *
+ * - url(): a `php -S` server whose router is server.php.
+ * - rawUrl(): raw_server.php, which writes the status line and the headers itself, so they can
+ *   trickle in.
  */
 final class LocalServer
 {
-    /** @var resource|null */
-    private static $process = null;
+    /** @var array<string, resource> */
+    private static array $processes = [];
 
-    private static string $url = '';
+    /** @var array<string, string> */
+    private static array $urls = [];
 
     private function __construct() {}
 
     /**
-     * The base URL of the server, started on first use.
+     * The base URL of the `php -S` server, started on first use.
      */
     public static function url(): string
     {
-        if (self::$process !== null) {
-            return self::$url;
+        return self::start('php', static fn(int $port): array => [\PHP_BINARY, '-S', "127.0.0.1:{$port}", __DIR__ . '/server.php']);
+    }
+
+    /**
+     * The base URL of the raw server, started on first use.
+     */
+    public static function rawUrl(): string
+    {
+        return self::start('raw', static fn(int $port): array => [\PHP_BINARY, __DIR__ . '/raw_server.php', (string) $port]);
+    }
+
+    public static function stop(): void
+    {
+        foreach (self::$processes as $process) {
+            proc_terminate($process, 9);
+            proc_close($process);
+        }
+        self::$processes = [];
+        self::$urls = [];
+    }
+
+    /**
+     * @param \Closure(int): list<string> $command
+     */
+    private static function start(string $kind, \Closure $command): string
+    {
+        if (isset(self::$urls[$kind])) {
+            return self::$urls[$kind];
         }
         $probe = stream_socket_server('tcp://127.0.0.1:0');
         \assert($probe !== false);
@@ -31,32 +62,23 @@ final class LocalServer
         fclose($probe);
         $port = (int) substr($name, (int) strrpos($name, ':') + 1);
         $process = proc_open(
-            [\PHP_BINARY, '-S', "127.0.0.1:{$port}", __DIR__ . '/server.php'],
+            $command($port),
             [0 => ['pipe', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
             $pipes,
         );
         \assert(\is_resource($process));
-        self::$process = $process;
-        self::$url = "http://127.0.0.1:{$port}";
+        self::$processes[$kind] = $process;
+        self::$urls[$kind] = "http://127.0.0.1:{$port}";
         for ($tries = 0; $tries < 100; $tries++) {
             $connection = @fsockopen('127.0.0.1', $port, $code, $message, 0.1);
             if ($connection !== false) {
                 fclose($connection);
 
-                return self::$url;
+                return self::$urls[$kind];
             }
             usleep(50_000);
         }
 
         throw new \RuntimeException("The local server did not start on port {$port}");
-    }
-
-    public static function stop(): void
-    {
-        if (self::$process !== null) {
-            proc_terminate(self::$process, 9);
-            proc_close(self::$process);
-            self::$process = null;
-        }
     }
 }
