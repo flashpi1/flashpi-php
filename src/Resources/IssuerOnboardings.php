@@ -32,8 +32,8 @@ final class IssuerOnboardings extends Resource
      *
      * ```php
      * $onboarding = $flashpi->issuerOnboardings->create([
-     *     'file' => fopen('firma.p12', 'rb'),
-     *     'password' => getenv('P12_PASSWORD'),
+     *     'file' => (string) file_get_contents('firma.p12'),
+     *     'password' => (string) getenv('P12_PASSWORD'),
      * ]);
      * ```
      *

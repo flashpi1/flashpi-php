@@ -30,7 +30,8 @@ composer validate --strict && composer cs && composer analyse && composer test
 - `composer analyse` runs PHPStan at level max, with bleeding edge, over `src`, `tests` and
   `scripts`. Its configuration (`phpstan.neon.dist`) adds flags of its own; the consumer files of
   `tests/Types/Fixtures` and the README examples are also analysed with a consumer's
-  configuration (`tests/Types/Fixtures/phpstan.neon`) by `tests/Types/ConsumerTypesTest.php`.
+  configuration (`tests/Types/Fixtures/phpstan.neon`) by `tests/Types/ConsumerTypesTest.php`,
+  and the `php` blocks of the public docblocks by `tests/Types/DocblockExamplesTest.php`.
 - `composer test` runs PHPUnit, strict about warnings, deprecations and output. It also checks
   that the generated types match `openapi/openapi.json` and that `tests/Examples/Readme/` matches
   the READMEs (`composer openapi:check` and `composer readme:check` do the same on their own).

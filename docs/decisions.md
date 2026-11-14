@@ -199,7 +199,9 @@ and are listed so they can be confirmed or changed before 1.0.
   `tests/Types/ConsumerTypesTest.php`, with stubs of the bits of Laravel and Symfony they use
   (`tests/Examples/stubs/`, neither framework is a dependency), and PHP-CS-Fixer checks their
   style. The webhook examples are for plain PHP, Laravel and Symfony, where Python's are for
-  Django, Flask and FastAPI.
+  Django, Flask and FastAPI. The `php` blocks of the public docblocks (outside `src/Internal`)
+  pass the same analysis: `tests/Types/DocblockExamplesTest.php` writes them to a temporary
+  directory, the variables they read (`$flashpi`, `$issuerId`, `$rawBody`) set first.
 - **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
   `composer test:live` runs it, without Composer's 300 s limit on a script: waiting for the
   SRI's test environment can take longer. The Python suite's async-client cases run on the one

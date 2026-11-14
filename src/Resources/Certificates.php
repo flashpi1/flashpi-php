@@ -34,8 +34,8 @@ final class Certificates extends Resource
      *
      * ```php
      * $flashpi->issuers->certificates->upload($issuerId, [
-     *     'file' => fopen('firma.p12', 'rb'),
-     *     'password' => getenv('P12_PASSWORD'),
+     *     'file' => (string) file_get_contents('firma.p12'),
+     *     'password' => (string) getenv('P12_PASSWORD'),
      * ]);
      * ```
      *
