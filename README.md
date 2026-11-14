@@ -399,7 +399,10 @@ $flashpi = new Flashpi(
 
 Cada método acepta además, como último argumento, un array con opciones de esa petición:
 `idempotencyKey`, `timeout`, `maxRetries`, `language`, `correlationId` (tu propio id, que
-Flashpi registra) y `extraHeaders`. Una opción desconocida se rechaza.
+Flashpi registra) y `extraHeaders`. Una opción desconocida se rechaza. `extraHeaders`, como el
+`defaultHeaders` del cliente, no puede llevar `Content-Length`, `Transfer-Encoding`, `Keep-Alive`,
+`Upgrade` ni `Expect`, que fija o gestiona el cliente HTTP: lanzan una
+`\InvalidArgumentException` antes de enviar nada.
 
 ```php
 $document = $flashpi->documents->get($documentId, ['timeout' => 10, 'language' => 'es', 'correlationId' => 'pedido-42']);
