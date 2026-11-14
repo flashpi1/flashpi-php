@@ -44,9 +44,9 @@ composer validate --strict && composer cs && composer analyse && composer test
   `getallheaders()` polyfill without a return type: with Guzzle 7 installed, analyse the library
   alone (`vendor/bin/phpstan analyse src scripts`), and `ConsumerTypesTest` skips itself.
 - CI also runs the tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, and on PHP 8.2 with the oldest
-  versions `composer.json` allows. Composer 2.9 and later refuse versions with security
-  advisories by default, among them the oldest Guzzle 7: do it in a scratch copy, with
-  `composer config audit.block-insecure false && composer update --prefer-lowest --prefer-stable`.
+  versions `composer.json` allows (Guzzle 7.15.2, psr7 2.13, promises 2.5.1): run
+  `composer update --prefer-lowest --prefer-stable`, then `composer update` to go back to the
+  newest.
 - `composer package:check` checks what Composer would install from a tag: the archive of `HEAD`
   (so commit first), which `.gitattributes` keeps to the library, `composer.json`, the license
   and the READMEs. CI then installs that archive in a clean project, with Guzzle 7 and with
@@ -65,7 +65,7 @@ composer validate --strict && composer cs && composer analyse && composer test
   setting them come from `tests/Examples/Readme/Context.php`, and the reader's functions and the
   bits of Laravel and Symfony it uses are stubbed in `tests/Examples/stubs/`.
 - PHP 8.2 or later, `declare(strict_types=1)` in every file, final classes, PHPStan at level max.
-- The SDK has **one runtime dependency**, Guzzle (`^7.8.2 || ^8.0`). Models are arrays with the
+- The SDK has **one runtime dependency**, Guzzle (`^7.15.2 || ^8.0.1`). Models are arrays with the
   API's camelCase keys, typed by the PHPStan array shapes generated from the OpenAPI document; no
   model classes.
 - Every request goes through `Flashpi\Internal\Engine::request()`: retries, idempotency,

@@ -14,8 +14,8 @@ Ecuador's SRI.
 - Typed errors (RFC 9457) with their `errorCode`, field errors and `requestId`.
 - Automatic pagination with `foreach`.
 - Webhook signature verification (Standard Webhooks) for Laravel, Symfony or plain PHP.
-- PHP 8.2 or later. One dependency: [Guzzle](https://docs.guzzlephp.org/) 7.8.2 or later, or 8
-  (Laravel 11, 12 and 13).
+- PHP 8.2 or later. One dependency: [Guzzle](https://docs.guzzlephp.org/) 7.15.2 or later, or
+  8.0.1 or later (Laravel 11, 12 and 13).
 
 ## Install
 
