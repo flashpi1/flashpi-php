@@ -31,7 +31,10 @@ The owner answered the questions the port left open and confirmed every other ch
 - **Guzzle 7's stream handler.** What Guzzle's stream handler cannot do without the curl
   extension (limit headers that trickle in, and on Guzzle 7 notice a chunked or compressed answer
   cut short) stays documented, in the READMEs and below ("Transfer failures", "The deadline of an
-  attempt"), and `composer.json` keeps suggesting `ext-curl`. No code change.
+  attempt"), and `composer.json` keeps suggesting `ext-curl`. No code change. Testing the new
+  lowest Guzzle 8 showed that its stream handler, before 8.3.0, also returns a chunked answer cut
+  before its last chunk as it arrived: that is documented the same way, and
+  `tests/DeadlineTest.php` pins it by version.
 - **The porting choices.** Every choice the 2026-11-13 entries listed as chosen while porting is
   confirmed, and they now stand among the owner's decisions. Among them: `ConnectionException` and
   `TimeoutException`; the API's error code in `$e->errorCode`, with `getCode()` returning the HTTP
@@ -134,11 +137,12 @@ The owner confirmed every one of them on 2026-11-14.
   short is a retried `ConnectionException` too with curl and Guzzle 8's stream handler, which fail
   the transfer (httpx and Node raise a network error there). Guzzle 7's stream handler returns
   what arrived: the SDK compares a body framed by `Content-Length` with it itself, but it cannot
-  tell a chunked answer cut before its last chunk (PHP's http wrapper hides it) or a compressed
-  answer cut short (Guzzle inflates what arrived and drops the `Content-Length`), which are
-  returned as they arrived. The API frames its answers with `Content-Length` and the SDK sends no
-  `Accept-Encoding`, so this needs an intermediary that re-frames or compresses them, or a caller
-  that asks for compression; `tests/DeadlineTest.php` pins it.
+  tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and Guzzle 8's
+  stream handler notices it only from 8.3.0 on) or a compressed answer cut short (Guzzle 7
+  inflates what arrived and drops the `Content-Length`), which are returned as they arrived.
+  The API frames its answers with `Content-Length` and the SDK sends no `Accept-Encoding`, so
+  this needs an intermediary that re-frames or compresses them, or a caller that asks for
+  compression; `tests/DeadlineTest.php` pins it.
 - **The deadline of an attempt.** Guzzle's `timeout` and `connect_timeout` are the attempt's
   timeout (at least one millisecond, Guzzle 8's floor), and `read_timeout` is that timeout rounded
   up to whole seconds: Guzzle 7's stream handler turns the fraction of a `read_timeout` into a

@@ -425,8 +425,8 @@ $flashpi = new Flashpi(httpClient: new Client(['proxy' => 'http://proxy.internal
 
 In tests, a client built on Guzzle's `MockHandler` answers in place of the API. Without the curl
 extension, Guzzle's stream handler can let headers that arrive slowly keep an attempt going past
-its timeout (the answer is then refused), and Guzzle 7's may not notice an answer cut short;
-install `ext-curl` in production.
+its timeout (the answer is then refused), and it may not notice an answer cut short (Guzzle 7,
+and Guzzle 8 before 8.3); install `ext-curl` in production.
 
 ## Servers only
 
