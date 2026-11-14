@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Flashpi\Tests;
 
+use Composer\InstalledVersions;
 use Flashpi\Exception\ApiException;
 use Flashpi\Exception\ConnectionException;
 use Flashpi\Exception\TimeoutException;
@@ -198,20 +199,24 @@ final class DeadlineTest extends TestCase
     }
 
     #[Group('network')]
-    public function testACutChunkedOrCompressedAnswerFailsExceptOnGuzzle7sStreamHandler(): void
+    public function testACutChunkedOrCompressedAnswerFailsUnlessTheStreamHandlerHidesIt(): void
     {
-        $guzzle7 = !class_exists('GuzzleHttp\\Exception\\ConnectTimeoutException');
+        $guzzle = (string) InstalledVersions::getVersion('guzzlehttp/guzzle');
+        // What the stream handler returns as it arrived, so the SDK cannot tell (docs/decisions.md,
+        // "Transfer failures"). PHP's http wrapper hides that a chunked answer ended before its
+        // last chunk, which Guzzle notices from 8.3.0 on; Guzzle 7 inflates a compressed answer
+        // without a Content-Length to compare. Pinned here so a change of Guzzle is seen.
+        $hidden = [
+            '/chunk-cut' => version_compare($guzzle, '8.3.0', '<'),
+            '/gzip-cut' => version_compare($guzzle, '8.0.0', '<'),
+        ];
         foreach (['stream' => new StreamHandler(), 'default' => null] as $label => $handler) {
             $http = new Client(['handler' => HandlerStack::create($handler)]);
             $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 5.0, maxRetries: 0, httpClient: $http);
             $pdf = self::bytes($client, '/pdf');
             self::assertGreaterThan(1000, \strlen($pdf));
-            foreach (['/chunk-cut', '/gzip-cut'] as $path) {
-                if ($guzzle7 && $label === 'stream') {
-                    // PHP's http wrapper hides that the chunked answer ended before its last chunk,
-                    // and Guzzle 7 inflates what arrived without a Content-Length to compare, so
-                    // the SDK cannot tell (docs/decisions.md, "Transfer failures"). Pinned here so
-                    // a change of Guzzle 7 is seen.
+            foreach ($hidden as $path => $hiddenByTheStreamHandler) {
+                if ($hiddenByTheStreamHandler && $label === 'stream') {
                     $cut = self::bytes($client, $path);
                     self::assertNotSame('', $cut, "{$label} {$path}");
                     self::assertLessThan(\strlen($pdf), \strlen($cut), "{$label} {$path}");
@@ -219,7 +224,8 @@ final class DeadlineTest extends TestCase
 
                     continue;
                 }
-                // curl, and Guzzle 8's stream handler, fail the transfer: a retried network error.
+                // curl, and the stream handler where it notices, fail the transfer: a retried
+                // network error.
                 $error = self::throws(ConnectionException::class, static fn() => self::bytes($client, $path));
                 self::assertNotInstanceOf(TimeoutException::class, $error, "{$label} {$path}");
                 self::assertStringStartsWith('GET ' . LocalServer::rawUrl() . "{$path} failed: ", $error->getMessage(), "{$label} {$path}");
