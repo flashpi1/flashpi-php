@@ -28,7 +28,7 @@
   "require": {
     "php": "^8.2",
     "ext-json": "*",
-    "guzzlehttp/guzzle": "^7.15.2 || ^8.0.1"
+    "guzzlehttp/guzzle": "^7.15.2 || ^8.3"
   },
   "suggest": {
     "ext-curl": "Enforces each attempt's deadline over the whole answer, headers included, and notices an answer cut short"
