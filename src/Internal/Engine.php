@@ -12,9 +12,6 @@ use Flashpi\Exception\TimeoutException;
 use Flashpi\Version;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\ConnectTimeoutException;
-use GuzzleHttp\Exception\NetworkTimeoutException;
-use GuzzleHttp\Exception\ResponseTimeoutException;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Psr7\MultipartStream;
 use GuzzleHttp\Psr7\Request;
@@ -66,6 +63,16 @@ final class Engine
     private const IN_PROGRESS_FIRST_WAIT = 1.0;
 
     private const IN_PROGRESS_MAX_WAIT = 5.0;
+
+    /**
+     * Guzzle 8's timeout exceptions, by name: they do not exist in Guzzle 7, where static analysis
+     * would report them.
+     */
+    private const GUZZLE_8_TIMEOUTS = [
+        'GuzzleHttp\\Exception\\ConnectTimeoutException',
+        'GuzzleHttp\\Exception\\NetworkTimeoutException',
+        'GuzzleHttp\\Exception\\ResponseTimeoutException',
+    ];
 
     /** curl's CURLE_OPERATION_TIMEDOUT, in the handler context of Guzzle 7's exceptions. */
     private const CURL_TIMEOUT = 28;
@@ -440,12 +447,10 @@ final class Engine
 
     private static function isTimeout(#[\SensitiveParameter] \Throwable $error): bool
     {
-        if (
-            $error instanceof ConnectTimeoutException
-            || $error instanceof NetworkTimeoutException
-            || $error instanceof ResponseTimeoutException
-        ) {
-            return true;
+        foreach (self::GUZZLE_8_TIMEOUTS as $class) {
+            if (is_a($error, $class)) {
+                return true;
+            }
         }
         if (method_exists($error, 'getHandlerContext')) {
             $context = $error->getHandlerContext();
