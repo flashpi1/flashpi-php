@@ -127,7 +127,11 @@ final class Flashpi
      *                                Error codes do not change.
      * @param array<string, string>|null $defaultHeaders Headers sent with every request (not
      *                                                   `Idempotency-Key`: that one is per
-     *                                                   request).
+     *                                                   request). `Content-Length`,
+     *                                                   `Transfer-Encoding`, `Keep-Alive`,
+     *                                                   `Upgrade` and `Expect` are refused here
+     *                                                   and in `extraHeaders`: the HTTP client
+     *                                                   sets or manages them.
      * @param ClientInterface|null $httpClient A Guzzle client to send the requests with (proxies,
      *                                         middleware, tests). The SDK never follows
      *                                         redirects and sets each attempt's timeout on it;

@@ -27,6 +27,12 @@ final class HeadersTest extends TestCase
 
     private const FRAMING = ['Content-Length', 'content-length', 'Transfer-Encoding', 'TRANSFER-ENCODING'];
 
+    /** Headers of the connection, refused as the Node SDK refuses them, in any letter case. */
+    private const CONNECTION = ['Keep-Alive', 'keep-alive', 'KEEP-ALIVE', 'Upgrade', 'upgrade', 'UPGRADE', 'Expect', 'expect', 'eXpEcT'];
+
+    /** Values of those headers, the last one a secret their message must not show. */
+    private const CONNECTION_VALUES = ['timeout=5, max=100', 'h2c', '100-continue', 'fp_live_not_to_be_shown'];
+
     // Trimming.
 
     public function testTrimsTheSpacesAroundTheValuesOfEveryOption(): void
@@ -154,6 +160,37 @@ final class HeadersTest extends TestCase
         self::assertSame([], $api->sent);
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function connection(): iterable
+    {
+        foreach (self::CONNECTION as $name) {
+            yield $name => [$name];
+        }
+    }
+
+    #[DataProvider('connection')]
+    public function testRefusesAHeaderOfTheConnectionWithoutShowingItsValueOrRetrying(string $name): void
+    {
+        $api = self::api();
+        $message = "/^'{$name}' is managed by the HTTP client: leave it out$/";
+        foreach (self::CONNECTION_VALUES as $value) {
+            $calls = [
+                static fn() => $api->things->create(['a' => 1], ['extraHeaders' => ['x-tenant' => 'acme', $name => $value]]),
+                static fn() => $api->things->status(['extraHeaders' => [$name => $value]]),
+                static fn() => $api->things->upload('p12', 'secret', ['extraHeaders' => [$name => $value]]),
+            ];
+            foreach ($calls as $call) {
+                $error = self::throws(\InvalidArgumentException::class, $call, $message);
+                self::assertStringNotContainsString($value, $error->getMessage());
+                self::assertNull($error->getPrevious());
+            }
+        }
+        self::assertSame([], $api->sent);
+        self::assertSame([], $api->clock->sleeps);
+    }
+
     public function testRefusesAnOptionThatIsNotText(): void
     {
         $api = self::api();
@@ -190,6 +227,19 @@ final class HeadersTest extends TestCase
     public function testRefusesADefaultHeaderThatFramesTheBody(string $name): void
     {
         self::throws(\InvalidArgumentException::class, static fn() => new Flashpi(Replies::TEST_KEY, defaultHeaders: [$name => 'chunked']), "/^'{$name}' is set by the SDK from the body/");
+    }
+
+    #[DataProvider('connection')]
+    public function testRefusesADefaultHeaderOfTheConnectionWithoutShowingItsValue(string $name): void
+    {
+        foreach (self::CONNECTION_VALUES as $value) {
+            $error = self::throws(
+                \InvalidArgumentException::class,
+                static fn() => new Flashpi(Replies::TEST_KEY, defaultHeaders: ['x-env' => 'prod', $name => $value]),
+                "/^'{$name}' is managed by the HTTP client: leave it out$/",
+            );
+            self::assertStringNotContainsString($value, $error->getMessage());
+        }
     }
 
     public function testRefusesAnIdempotencyKeyInDefaultHeadersEvenWithSpaces(): void

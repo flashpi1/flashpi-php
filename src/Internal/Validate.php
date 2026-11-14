@@ -30,9 +30,18 @@ final class Validate
     private const CONTROL = '/[\x00-\x08\x0a-\x1f\x7f]/';
 
     /**
-     * Headers the HTTP client sets from the body: another value would frame the body wrongly.
+     * Headers a caller cannot set, by lowercase name, with why. Content-Length and
+     * Transfer-Encoding frame the body, which the HTTP client does: another value would frame it
+     * wrongly. Keep-Alive, Upgrade and Expect are about the connection, which the HTTP client
+     * manages (the Node SDK refuses them too: Node.js's fetch refuses them while sending).
      */
-    private const FRAMING = ['content-length', 'transfer-encoding'];
+    private const MANAGED = [
+        'content-length' => 'is set by the SDK from the body',
+        'transfer-encoding' => 'is set by the SDK from the body',
+        'keep-alive' => 'is managed by the HTTP client',
+        'upgrade' => 'is managed by the HTTP client',
+        'expect' => 'is managed by the HTTP client',
+    ];
 
     /** What an API key is made of: visible ASCII, without spaces. */
     private const API_KEY = '/^[\x21-\x7e]+\z/';
@@ -110,8 +119,9 @@ final class Validate
     }
 
     /**
-     * The headers of an array, each name and value checked. Content-Length and
-     * Transfer-Encoding are refused: the HTTP client sets them from the body.
+     * The headers of an array, each name and value checked. Content-Length, Transfer-Encoding,
+     * Keep-Alive, Upgrade and Expect are refused in any letter case, with a message that names
+     * the header, never its value: the HTTP client sets or manages them.
      *
      * @return array<string, string>
      *
@@ -128,8 +138,9 @@ final class Validate
         $checked = [];
         foreach ($headers as $name => $value) {
             $valid = self::headerName($name);
-            if (\in_array(strtolower($valid), self::FRAMING, true)) {
-                throw new \InvalidArgumentException(self::quote($valid) . ' is set by the SDK from the body: leave it out');
+            $managed = self::MANAGED[strtolower($valid)] ?? null;
+            if ($managed !== null) {
+                throw new \InvalidArgumentException(self::quote($valid) . " {$managed}: leave it out");
             }
             $checked[$valid] = self::headerValue('The value of header ' . self::quote($valid), $value);
         }
