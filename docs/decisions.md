@@ -201,7 +201,9 @@ and are listed so they can be confirmed or changed before 1.0.
   style. The webhook examples are for plain PHP, Laravel and Symfony, where Python's are for
   Django, Flask and FastAPI.
 - **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
-  `composer test:live` runs it. The Python suite's async-client cases run on the one client.
+  `composer test:live` runs it, without Composer's 300 s limit on a script: waiting for the
+  SRI's test environment can take longer. The Python suite's async-client cases run on the one
+  client.
 - **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue
   from page to page), and `data`, `hasMore`, `nextCursor`, `hasNextPage()` and `nextPage()` move
   one page at a time. Walking a page twice fetches the following pages again.

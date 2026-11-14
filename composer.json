@@ -73,7 +73,10 @@
     "readme:check": "@php scripts/readme.php check",
     "readme:generate": "@php scripts/readme.php generate",
     "test": "phpunit",
-    "test:live": "phpunit --group live"
+    "test:live": [
+      "Composer\\Config::disableProcessTimeout",
+      "phpunit --group live"
+    ]
   },
   "scripts-descriptions": {
     "analyse": "Runs PHPStan at the highest level.",
