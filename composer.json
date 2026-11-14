@@ -63,6 +63,11 @@
     "cs": "php-cs-fixer check --diff",
     "cs:fix": "php-cs-fixer fix",
     "openapi:check": "@php scripts/openapi.php check",
+    "package:check": [
+      "@php -r \"is_dir('build') || mkdir('build');\"",
+      "git archive --format=tar --prefix=flashpi-php/ -o build/package.tar HEAD",
+      "@php scripts/package_check.php build/package.tar"
+    ],
     "openapi:generate": "@php scripts/openapi.php generate",
     "openapi:sync": "@php scripts/openapi.php sync",
     "readme:check": "@php scripts/readme.php check",
@@ -77,6 +82,7 @@
     "openapi:check": "Fails when src/Types/ApiTypes.php does not match openapi/openapi.json.",
     "openapi:generate": "Regenerates src/Types/ApiTypes.php from openapi/openapi.json.",
     "openapi:sync": "Downloads the public OpenAPI document, then regenerates the types.",
+    "package:check": "Checks what Composer would install from the archive of HEAD (commit first).",
     "readme:check": "Fails when tests/Examples/Readme does not match the READMEs.",
     "readme:generate": "Rewrites tests/Examples/Readme from the php blocks of the READMEs.",
     "test": "Runs the tests.",
