@@ -36,6 +36,16 @@ and are listed so they can be confirmed or changed before 1.0.
 
 ### Chosen while porting (to confirm)
 
+- **The oldest dependencies.** `composer.json` conflicts with `guzzlehttp/promises` before 2.0.3
+  and `guzzlehttp/psr7` before 2.6.3, the versions Guzzle 7.8.2 shipped with. Without it, the
+  lowest versions `^7.8.2` allows are psr7 1.9 and promises 1.5, which emit deprecations on PHP
+  8.2 and later from a certificate upload (dynamic properties of `MultipartStream`) and at
+  autoload on 8.5. It adds no requirement but narrows what the owner's Guzzle constraint can
+  install. Composer 2.9 and later also refuse, by default, versions with security advisories,
+  among them every Guzzle 7 before 7.15.2: the CI job of the lowest versions turns that off
+  (`audit.block-insecure`) and prints the versions it tested. Whether to raise the constraint to
+  `^7.15.2 || ^8.0.1` (Laravel 11 and 12 accept it) is the owner's call.
+
 - **Layout.** The client is `Flashpi\Flashpi`; next to it are `Page`, `ApiResponse`, `Webhooks`
   and `Version`. Exceptions are in `Flashpi\Exception`, types in `Flashpi\Types`, and the engine,
   the request specs and the bases of the resources in `Flashpi\Internal` (all `@internal`). Classes
