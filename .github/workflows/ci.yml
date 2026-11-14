@@ -102,12 +102,13 @@ jobs:
       - run: vendor/bin/phpunit
 
   lowest:
-    name: Lowest dependencies (PHP 8.2, Guzzle ${{ matrix.guzzle }})
+    name: Lowest dependencies (PHP ${{ matrix.php }}, Guzzle ${{ matrix.guzzle }})
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        php: ['8.2', '8.5']
         guzzle: ['7', '8']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -115,7 +116,7 @@ jobs:
           persist-credentials: false
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
-          php-version: '8.2'
+          php-version: ${{ matrix.php }}
           coverage: none
           tools: composer:v2
       # The oldest versions composer.json allows with each Guzzle major: Guzzle 7.15.2 with psr7

@@ -43,8 +43,8 @@ composer validate --strict && composer cs && composer analyse && composer test
   later. Guzzle 7 lacks Guzzle 8's generics, which the test helpers use, and its psr7 installs a
   `getallheaders()` polyfill without a return type: with Guzzle 7 installed, analyse the library
   alone (`vendor/bin/phpstan analyse src scripts`), and `ConsumerTypesTest` skips itself.
-- CI also runs the tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, and on PHP 8.2 with the oldest
-  versions `composer.json` allows with each Guzzle major (Guzzle 7.15.2 with psr7 2.13.0 and
+- CI also runs the tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, and on PHP 8.2 and 8.5 with the
+  oldest versions `composer.json` allows with each Guzzle major (Guzzle 7.15.2 with psr7 2.13.0 and
   promises 2.5.1; Guzzle 8.0.1 with psr7 3.0.0 and promises 3.0.0): run
   `composer update --prefer-lowest --prefer-stable` for Guzzle 7's, or
   `composer update --prefer-lowest --prefer-stable --with "guzzlehttp/guzzle:^8.0.1"` for Guzzle
