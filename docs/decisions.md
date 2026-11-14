@@ -7,7 +7,8 @@ Decisions about flashpi/flashpi-php, the PHP SDK, newest first. Its design follo
 [Python](https://github.com/flashpi1/flashpi-python/blob/main/docs/decisions.md)) apply here unless
 an entry says otherwise. Every entry is the Flashpi product owner's: some were taken with the
 owner, and the others were chosen while porting, after the Python SDK where the owner had not
-decided, and confirmed by the owner on 2026-11-14.
+decided, and confirmed by the owner on 2026-11-14. The exceptions, found or changed after the
+owner's answers and not decided by the owner, are listed at the end of the 2026-11-14 entry.
 
 ## 2026-11-14: the owner's answers
 
@@ -32,10 +33,7 @@ The owner answered the questions the port left open and confirmed every other ch
 - **Guzzle 7's stream handler.** What Guzzle's stream handler cannot do without the curl
   extension (limit headers that trickle in, and on Guzzle 7 notice a chunked or compressed answer
   cut short) stays documented, in the READMEs and below ("Transfer failures", "The deadline of an
-  attempt"), and `composer.json` keeps suggesting `ext-curl`. No code change. Testing the new
-  lowest Guzzle 8 showed that its stream handler, before 8.3.0, also returns a chunked answer cut
-  before its last chunk as it arrived: that is documented the same way, and
-  `tests/DeadlineTest.php` pins it by version.
+  attempt"), and `composer.json` keeps suggesting `ext-curl`. No code change.
 - **The porting choices.** Every choice the 2026-11-13 entries listed as chosen while porting is
   confirmed, and they now stand among the owner's decisions. Among them: `ConnectionException` and
   `TimeoutException`; the API's error code in `$e->errorCode`, with `getCode()` returning the HTTP
@@ -43,6 +41,19 @@ The owner answered the questions the port left open and confirmed every other ch
   contents or a stream, never a path; a DELETE returning `void`; the static
   `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`; and `getenv()` in the plain
   PHP examples, with Laravel's and Symfony's configuration in theirs.
+
+Found or changed after the answers, and not decided by the owner:
+
+- **Guzzle 8 before 8.3.** Testing the new lowest Guzzle 8 showed that the stream handler of
+  Guzzle 8.0.1 to 8.2.1, like Guzzle 7's, returns a chunked answer cut before its last chunk as it
+  arrived; 8.3.0 and later fail the transfer. For now it is documented as Guzzle 7's is (the
+  READMEs, "Transfer failures" below), and `tests/DeadlineTest.php` pins it by version, which CI's
+  lowest job runs with Guzzle 8.0.1. Whether to keep `^8.0.1` or raise the Guzzle 8 floor to
+  `^8.3` is the owner's call.
+- **The lowest versions on PHP 8.5 too.** The CI job of the lowest versions ran on PHP 8.2 only
+  because PHPUnit 11.5.0 printed a deprecation of its own on 8.5. With Composer's audit on, the
+  lowest PHPUnit is 11.5.50, which does not, so the job runs on PHP 8.2 and 8.5 ("CI" below). It
+  changes what CI tests, not the SDK.
 
 ## 2026-11-13: the PHP SDK
 
@@ -138,14 +149,15 @@ The owner confirmed every one of them on 2026-11-14.
   statuses (`BadResponseException`) gets its response read as the API's answer. An answer cut short
   is a retried `ConnectionException` too with curl and with Guzzle 8's stream handler, which fail
   the transfer (httpx and Node raise a network error there); before 8.3.0, though, Guzzle 8's
-  stream handler misses a chunked answer cut before its last chunk, as below. Guzzle 7's stream
-  handler returns what arrived: the SDK compares a body framed by `Content-Length` with it itself,
-  but it cannot tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and
-  Guzzle 8's stream handler notices it only from 8.3.0 on) or a compressed answer cut short
-  (Guzzle 7 inflates what arrived and drops the `Content-Length`), which are returned as they
-  arrived. The API frames its answers with `Content-Length` and the SDK sends no `Accept-Encoding`,
-  so this needs an intermediary that re-frames or compresses them, or a caller that asks for
-  compression; `tests/DeadlineTest.php` pins it.
+  stream handler misses a chunked answer cut before its last chunk, as below (found after the
+  owner's answers and not decided by the owner: see 2026-11-14). Guzzle 7's stream handler returns
+  what arrived: the SDK compares a body framed by `Content-Length` with it itself, but it cannot
+  tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and Guzzle 8's
+  stream handler notices it only from 8.3.0 on) or a compressed answer cut short (Guzzle 7 inflates
+  what arrived and drops the `Content-Length`), which are returned as they arrived. The API frames
+  its answers with `Content-Length` and the SDK sends no `Accept-Encoding`, so this needs an
+  intermediary that re-frames or compresses them, or a caller that asks for compression;
+  `tests/DeadlineTest.php` pins it.
 - **The deadline of an attempt.** Guzzle's `timeout` and `connect_timeout` are the attempt's
   timeout (at least one millisecond, Guzzle 8's floor), and `read_timeout` is that timeout rounded
   up to whole seconds: Guzzle 7's stream handler turns the fraction of a `read_timeout` into a
@@ -293,10 +305,9 @@ The owner confirmed every one of them on 2026-11-14.
   tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7
   (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions with each Guzzle
   major (Guzzle 7.15.2 and 8.0.1, since 2026-11-14) on PHP 8.2 and 8.5 (on 8.2 only before
-  2026-11-14, when the lowest PHPUnit was 11.5.0, which prints a deprecation of its own on 8.5;
-  with Composer's audit on, the lowest is now 11.5.50, which does not);
-  and the archive, checked by `scripts/package_check.php`, then installed in a clean project with
-  each Guzzle major on PHP 8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`,
-  `openapi-sync.yml`, `release.yml` and `dependabot.yml` follow Python's, without a build or
-  publish job: Packagist reads the tags. PHP comes from `shivammathur/setup-php`, pinned by commit
-  like every action (2.40.0 since 2026-11-14).
+  2026-11-14; 8.5 was added after the owner's answers, see 2026-11-14); and the archive, checked by
+  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP 8.2
+  and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
+  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags. PHP
+  comes from `shivammathur/setup-php`, pinned by commit like every action (2.40.0 since
+  2026-11-14).
