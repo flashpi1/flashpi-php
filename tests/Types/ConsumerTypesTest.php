@@ -26,6 +26,11 @@ final class ConsumerTypesTest extends TestCase
 
     public function testPhpstanReportsEveryMistakeOfTheMisuseFixtures(): void
     {
+        if (!class_exists('GuzzleHttp\\Exception\\ConnectTimeoutException')) {
+            // Static analysis runs with Guzzle 8 (CI's verify job). Guzzle 7's psr7 2 installs a
+            // getallheaders() polyfill without a return type, which PHPStan reads as mixed.
+            self::markTestSkipped('The consumer types are checked with Guzzle 8');
+        }
         $types = 'TypesMisuse.php';
         $resources = 'ResourcesMisuse.php';
         $expected = [

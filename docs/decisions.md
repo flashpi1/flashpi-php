@@ -199,7 +199,10 @@ and are listed so they can be confirmed or changed before 1.0.
   spaces and the byte order mark; Python's `strip()` keeps the mark). Headers are any iterable
   (arrays, `getallheaders()`, PSR-7's `getHeaders()`, Symfony's `HeaderBag`, a generator), read
   once, and typed `iterable<mixed, mixed>` (`WebhookHeaders`) so that PHPStan at level max
-  accepts what servers hand over; entries that are not strings are skipped. `now` is a date or
+  accepts what servers hand over; entries that are not strings are skipped. With Guzzle 7,
+  psr7 2 installs a `getallheaders()` polyfill (ralouphie/getallheaders) without a return type,
+  which PHPStan reads as `mixed`: there, a caller at level max writes `(array) getallheaders()`,
+  and `tests/Types/ConsumerTypesTest.php` runs with Guzzle 8 only. `now` is a date or
   Unix seconds. A `Stringable` payload is read once too: `unwrap()` decodes the bytes it
   verified, so a PSR-7 body that cannot seek works, and one that would read otherwise a second
   time cannot slip in unverified JSON.
