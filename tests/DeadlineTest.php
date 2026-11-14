@@ -201,22 +201,19 @@ final class DeadlineTest extends TestCase
     #[Group('network')]
     public function testACutChunkedOrCompressedAnswerFailsUnlessTheStreamHandlerHidesIt(): void
     {
-        $guzzle = (string) InstalledVersions::getVersion('guzzlehttp/guzzle');
-        // What the stream handler returns as it arrived, so the SDK cannot tell (docs/decisions.md,
-        // "Transfer failures"). PHP's http wrapper hides that a chunked answer ended before its
-        // last chunk, which Guzzle notices from 8.3.0 on; Guzzle 7 inflates a compressed answer
-        // without a Content-Length to compare. Pinned here so a change of Guzzle is seen.
-        $hidden = [
-            '/chunk-cut' => version_compare($guzzle, '8.3.0', '<'),
-            '/gzip-cut' => version_compare($guzzle, '8.0.0', '<'),
-        ];
+        // What Guzzle 7's stream handler returns as it arrived, so the SDK cannot tell
+        // (docs/decisions.md, "Transfer failures"): PHP's http wrapper hides that a chunked answer
+        // ended before its last chunk, which Guzzle 8 notices (from 8.3.0 on, the oldest the SDK
+        // allows), and Guzzle 7 inflates a compressed answer without a Content-Length to compare.
+        // Pinned here so a change of Guzzle is seen.
+        $guzzle7 = version_compare((string) InstalledVersions::getVersion('guzzlehttp/guzzle'), '8.0.0', '<');
         foreach (['stream' => new StreamHandler(), 'default' => null] as $label => $handler) {
             $http = new Client(['handler' => HandlerStack::create($handler)]);
             $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 5.0, maxRetries: 0, httpClient: $http);
             $pdf = self::bytes($client, '/pdf');
             self::assertGreaterThan(1000, \strlen($pdf));
-            foreach ($hidden as $path => $hiddenByTheStreamHandler) {
-                if ($hiddenByTheStreamHandler && $label === 'stream') {
+            foreach (['/chunk-cut', '/gzip-cut'] as $path) {
+                if ($guzzle7 && $label === 'stream') {
                     $cut = self::bytes($client, $path);
                     self::assertNotSame('', $cut, "{$label} {$path}");
                     self::assertLessThan(\strlen($pdf), \strlen($cut), "{$label} {$path}");
@@ -224,8 +221,7 @@ final class DeadlineTest extends TestCase
 
                     continue;
                 }
-                // curl, and the stream handler where it notices, fail the transfer: a retried
-                // network error.
+                // curl, and Guzzle 8's stream handler, fail the transfer: a retried network error.
                 $error = self::throws(ConnectionException::class, static fn() => self::bytes($client, $path));
                 self::assertNotInstanceOf(TimeoutException::class, $error, "{$label} {$path}");
                 self::assertStringStartsWith('GET ' . LocalServer::rawUrl() . "{$path} failed: ", $error->getMessage(), "{$label} {$path}");
