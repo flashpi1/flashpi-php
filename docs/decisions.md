@@ -18,8 +18,9 @@ The owner answered the questions the port left open and confirmed every other ch
   and Composer 2.9 and later refuse to install them by default. Laravel 11 and 12 accept it.
   Guzzle 7.15.2 requires psr7 2.13 and promises 2.5.1, and Guzzle 8 their third majors, so the
   conflicts with psr7 before 2.6.3 and promises before 2.0.3 no longer narrow anything: they are
-  gone. CI tests Guzzle 7.15.2, psr7 2.13.0 and promises 2.5.1 as the lowest versions, with
-  Composer's audit on, as a user's Composer installs them.
+  gone. CI tests the lowest versions with each major, with Composer's audit on, as a user's
+  Composer installs them: Guzzle 7.15.2 with psr7 2.13.0 and promises 2.5.1, and Guzzle 8.0.1
+  with psr7 3.0.0 and promises 3.0.0.
 - **Keep-Alive, Upgrade and Expect are refused**, as in Node, besides `Content-Length` and
   `Transfer-Encoding`: in a request's `extraHeaders` and the client's `defaultHeaders`, in any
   letter case, with the same `\InvalidArgumentException`, whose message names the header and
@@ -71,8 +72,9 @@ The owner answered the questions the port left open and confirmed every other ch
 The choices below were made while porting, after the Python SDK where the owner had not decided.
 The owner confirmed every one of them on 2026-11-14.
 
-- **The oldest dependencies.** Guzzle 7.15.2, psr7 2.13 and promises 2.5.1 since 2026-11-14
-  (above), which Composer installs with its audit on. Before, `composer.json` conflicted with
+- **The oldest dependencies.** Guzzle 7.15.2 (psr7 2.13.0, promises 2.5.1) and Guzzle 8.0.1
+  (psr7 3.0.0, promises 3.0.0) since 2026-11-14 (above), which Composer installs with its audit
+  on. Before, `composer.json` conflicted with
   `guzzlehttp/promises` before 2.0.3 and `guzzlehttp/psr7` before 2.6.3, the versions Guzzle 7.8.2
   shipped with: without it, the lowest versions `^7.8.2` allowed were psr7 1.9 and promises 1.5,
   which emit deprecations on PHP 8.2 and later from a certificate upload (dynamic properties of
@@ -288,9 +290,10 @@ The owner confirmed every one of them on 2026-11-14.
 - **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate
   --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
   tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7
-  (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions (Guzzle 7.15.2) on
-  PHP 8.2 only (PHPUnit 11.5.0, the lowest with Composer's audit off, prints a deprecation of its
-  own on 8.5; with the audit on, since 2026-11-14, the lowest is 11.5.50, which passes on 8.5 too);
+  (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions with each Guzzle
+  major (Guzzle 7.15.2 and 8.0.1, since 2026-11-14) on PHP 8.2 only (PHPUnit 11.5.0, the lowest
+  with Composer's audit off, prints a deprecation of its own on 8.5; with the audit on, since
+  2026-11-14, the lowest is 11.5.50, which passes on 8.5 too);
   and the archive, checked by `scripts/package_check.php`, then installed in a clean project with
   each Guzzle major on PHP 8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`,
   `openapi-sync.yml`, `release.yml` and `dependabot.yml` follow Python's, without a build or

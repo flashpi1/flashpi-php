@@ -44,9 +44,11 @@ composer validate --strict && composer cs && composer analyse && composer test
   `getallheaders()` polyfill without a return type: with Guzzle 7 installed, analyse the library
   alone (`vendor/bin/phpstan analyse src scripts`), and `ConsumerTypesTest` skips itself.
 - CI also runs the tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, and on PHP 8.2 with the oldest
-  versions `composer.json` allows (Guzzle 7.15.2, psr7 2.13, promises 2.5.1): run
-  `composer update --prefer-lowest --prefer-stable`, then `composer update` to go back to the
-  newest.
+  versions `composer.json` allows with each Guzzle major (Guzzle 7.15.2 with psr7 2.13.0 and
+  promises 2.5.1; Guzzle 8.0.1 with psr7 3.0.0 and promises 3.0.0): run
+  `composer update --prefer-lowest --prefer-stable` for Guzzle 7's, or
+  `composer update --prefer-lowest --prefer-stable --with "guzzlehttp/guzzle:^8.0.1"` for Guzzle
+  8's, then `composer update` to go back to the newest.
 - `composer package:check` checks what Composer would install from a tag: the archive of `HEAD`
   (so commit first), which `.gitattributes` keeps to the library, `composer.json`, the license
   and the READMEs. CI then installs that archive in a clean project, with Guzzle 7 and with
