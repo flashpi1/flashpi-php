@@ -128,9 +128,11 @@ and are listed so they can be confirmed or changed before 1.0.
   valid. Answers are decoded into associative arrays, invalid UTF-8 replaced; a successful JSON
   answer without an array (empty, `null`, a string: a misbehaving proxy) throws a
   `FlashpiException`, where the native `: array` return type would throw a `\TypeError` (Python
-  returns what it got). Text and bytes answers (XML, PDF) are the body as it came: PHP strings are
-  bytes. The PSR-7 response an `ApiResponse` holds has its body rewound into a new stream, so it can
-  be read again.
+  returns what it got). It is thrown within the attempt, not retried, and carries the call's
+  `idempotencyKey` like any error of an attempt: on a document POST the API probably issued the
+  document. Text and bytes answers (XML, PDF) are the body as it came: PHP strings are bytes. The
+  PSR-7 response an `ApiResponse` holds has its body rewound into a new stream, so it can be read
+  again.
 - **Queries and paths.** Null values are left out, booleans are sent as `true` and `false`,
   numbers and `Stringable` values as text, and anything else is refused; the encoding is
   Python's `urlencode()` (a space as `+`). Path ids are encoded as `encodeURIComponent()` does;

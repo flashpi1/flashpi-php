@@ -502,7 +502,8 @@ final class ClientTest extends TestCase
         $answers = [new Response(200), new Response(202), new Response(204), Replies::json(null), Replies::json('x'), Replies::json(1)];
         $api = self::api($answers, ['maxRetries' => 0]);
         foreach ($answers as $index => $answer) {
-            self::throws(FlashpiException::class, static fn() => $index % 2 === 0 ? $api->things->get(Replies::ID) : $api->things->create([]), '/^The API answered without a JSON object$/');
+            $status = $answer->getStatusCode();
+            self::throws(FlashpiException::class, static fn() => $index % 2 === 0 ? $api->things->get(Replies::ID) : $api->things->create([]), "/^The API answered {$status} without a JSON object$/");
         }
         self::assertCount(\count($answers), $api->sent);
     }
@@ -513,6 +514,28 @@ final class ClientTest extends TestCase
         self::throws(FlashpiException::class, static fn() => $api->client->documents->get(Replies::ID), '/without a JSON object/');
         self::throws(FlashpiException::class, static fn() => $api->client->status->get(), '/without a JSON object/');
         self::throws(FlashpiException::class, static fn() => $api->client->issuers->withResponse()->get(Replies::ID), '/without a JSON object/');
+    }
+
+    public function testKeepsTheKeyOfAnIssueAnsweredWithoutAJsonObject(): void
+    {
+        // A 2xx to a document POST means the API probably issued it: retrying needs its key.
+        $answers = [new Response(202, ['Content-Type' => 'application/json'], 'null'), new Response(202), Replies::json('ok', 202)];
+        $api = self::api($answers, ['maxRetries' => 0]);
+        foreach (array_keys($answers) as $index) {
+            $error = self::throws(FlashpiException::class, static fn() => $api->op('invoices.create', []), '/^The API answered 202 without a JSON object$/');
+            self::assertNotNull($error->idempotencyKey);
+            self::assertSame($api->request($index)->getHeaderLine('idempotency-key'), $error->idempotencyKey);
+        }
+
+        // The same when the document an earlier attempt created is read back.
+        $api = self::api([
+            Replies::networkError('reset'),
+            Replies::problem(422, 'idempotency_key_reused', ['documentId' => Replies::OTHER_ID]),
+            Replies::json(null),
+        ]);
+        $error = self::throws(FlashpiException::class, static fn() => $api->op('invoices.create', []), '/^The API answered 200 without a JSON object$/');
+        self::assertSame($api->request(0)->getHeaderLine('idempotency-key'), $error->idempotencyKey);
+        self::assertSame('GET', $api->request(2)->getMethod());
     }
 
     public function testSendsAMultipartBodyBuiltAgainForEveryAttempt(): void

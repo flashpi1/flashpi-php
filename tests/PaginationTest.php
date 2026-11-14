@@ -116,9 +116,10 @@ final class PaginationTest extends TestCase
     public function testRefusesAListAnswerWithoutDataAndPagination(): void
     {
         $api = self::api([Replies::json(['data' => []]), Replies::json([1, 2]), Replies::json(['data' => ['a' => 1], 'pagination' => []]), new Response(204)]);
-        for ($index = 0; $index < 4; $index++) {
+        for ($index = 0; $index < 3; $index++) {
             self::throws(FlashpiException::class, static fn() => $api->things->list(), '/^The API answered a list without data and pagination$/');
         }
+        self::throws(FlashpiException::class, static fn() => $api->things->list(), '/^The API answered 204 without a JSON object$/');
     }
 
     public function testStopsWhenTheCallerBreaksOutOfTheLoop(): void

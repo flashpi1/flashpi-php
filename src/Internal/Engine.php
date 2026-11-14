@@ -413,6 +413,12 @@ final class Engine
                 throw new FlashpiException("The API answered {$status} with a body that is not JSON", $error);
             }
         }
+        // The resources return arrays: an answer without one (empty, `null`, a string: a
+        // misbehaving proxy) is the SDK's error, thrown within the attempt so it carries the
+        // call's Idempotency-Key (the API may have issued the document).
+        if ($responseType === 'json' && !\is_array($data)) {
+            throw new FlashpiException("The API answered {$status} without a JSON object");
+        }
         $requestId = $headers['x-request-id'] ?? null;
 
         return new ApiResponse(
