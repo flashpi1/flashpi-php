@@ -1,13 +1,44 @@
 # Decisions
 
-Decisions about flashpi/flashpi-php, the PHP SDK, newest first. Its design follows the Node.js
-SDK, [@flashpi/node](https://github.com/flashpi1/flashpi-node), and the Python SDK,
+Decisions about flashpi/flashpi-php, the PHP SDK, newest first. Its design follows the Node.js SDK,
+[@flashpi/node](https://github.com/flashpi1/flashpi-node), and the Python SDK,
 [flashpi](https://github.com/flashpi1/flashpi-python), whose decisions
 ([Node](https://github.com/flashpi1/flashpi-node/blob/main/docs/decisions.md),
-[Python](https://github.com/flashpi1/flashpi-python/blob/main/docs/decisions.md)) apply here
-unless an entry says otherwise. Entries marked as the owner's were taken with the Flashpi product
-owner; the others were chosen while porting, after the Python SDK where the owner had not decided,
-and are listed so they can be confirmed or changed before 1.0.
+[Python](https://github.com/flashpi1/flashpi-python/blob/main/docs/decisions.md)) apply here unless
+an entry says otherwise. Every entry is the Flashpi product owner's: some were taken with the
+owner, and the others were chosen while porting, after the Python SDK where the owner had not
+decided, and confirmed by the owner on 2026-11-14.
+
+## 2026-11-14: the owner's answers
+
+The owner answered the questions the port left open and confirmed every other choice.
+
+- **Guzzle 7.15.2 or 8.0.1 at least.** `"guzzlehttp/guzzle": "^7.15.2 || ^8.0.1"`: older versions
+  have security advisories (CVE-2026-69246, CVE-2026-69245, CVE-2026-67354 and CVE-2026-67355),
+  and Composer 2.9 and later refuse to install them by default. Laravel 11 and 12 accept it.
+  Guzzle 7.15.2 requires psr7 2.13 and promises 2.5.1, and Guzzle 8 their third majors, so the
+  conflicts with psr7 before 2.6.3 and promises before 2.0.3 no longer narrow anything: they are
+  gone. CI tests Guzzle 7.15.2, psr7 2.13.0 and promises 2.5.1 as the lowest versions, with
+  Composer's audit on, as a user's Composer installs them.
+- **Keep-Alive, Upgrade and Expect are refused**, as in Node, besides `Content-Length` and
+  `Transfer-Encoding`: in a request's `extraHeaders` and the client's `defaultHeaders`, in any
+  letter case, with the same `\InvalidArgumentException`, whose message names the header and
+  never its value (`'Expect' is managed by the HTTP client: leave it out`). It is thrown before
+  anything is sent, so it is never retried; `tests/HeadersTest.php` pins it.
+- **setup-php 2.40.0.** `shivammathur/setup-php` is pinned to 2.40.0, commit
+  `eb7c497e18156a6bbabfef1d3a82760b9eda3962` (the annotated tag `4424c9a` points at it; released
+  2026-10-08), with the comment `# 2.40.0`, everywhere it is used.
+- **Guzzle 7's stream handler.** What Guzzle's stream handler cannot do without the curl
+  extension (limit headers that trickle in, and on Guzzle 7 notice a chunked or compressed answer
+  cut short) stays documented, in the READMEs and below ("Transfer failures", "The deadline of an
+  attempt"), and `composer.json` keeps suggesting `ext-curl`. No code change.
+- **The porting choices.** Every choice the 2026-11-13 entries listed as chosen while porting is
+  confirmed, and they now stand among the owner's decisions. Among them: `ConnectionException` and
+  `TimeoutException`; the API's error code in `$e->errorCode`, with `getCode()` returning the HTTP
+  status; an unknown option refused with an `\InvalidArgumentException`; the .p12 given as its
+  contents or a stream, never a path; a DELETE returning `void`; the static
+  `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`; and `getenv()` in the plain
+  PHP examples, with Laravel's and Symfony's configuration in theirs.
 
 ## 2026-11-13: the PHP SDK
 
@@ -17,9 +48,9 @@ and are listed so they can be confirmed or changed before 1.0.
   repository `flashpi1/flashpi-php`, MIT license held by SIGNIADIGITAL S.A. PHP 8.2 or later,
   tested on 8.2 to 8.5. First version 0.1.0 through release-please. Packagist reads the tags from
   GitHub: there is no upload or publish job, and the owner submits the repository to Packagist.
-- **One runtime dependency.** Guzzle, `^7.8.2 || ^8.0` (Laravel 11 and 12 need 7, Laravel 13
-  takes both), tested on both majors. A caller can pass a Guzzle client of their own
-  (`GuzzleHttp\ClientInterface`).
+- **One runtime dependency.** Guzzle, `^7.15.2 || ^8.0.1` since 2026-11-14, `^7.8.2 || ^8.0` before
+  (Laravel 11 and 12 need 7, Laravel 13 takes both), tested on both majors. A caller can pass a
+  Guzzle client of their own (`GuzzleHttp\ClientInterface`).
 - **Models are arrays.** Associative arrays with the API's camelCase keys
   (`$document['accessKey']`), typed by PHPStan array shapes generated from the OpenAPI document,
   the counterpart of Python's TypedDicts. No hydrated model classes. One synchronous client, no
@@ -34,17 +65,17 @@ and are listed so they can be confirmed or changed before 1.0.
   release process (release-please from 0.1.0, the live API test on the release PR only, the
   flashpi-bot GitHub App for release-please and the OpenAPI sync PR, grouped Dependabot).
 
-### Chosen while porting (to confirm)
+The choices below were made while porting, after the Python SDK where the owner had not decided.
+The owner confirmed every one of them on 2026-11-14.
 
-- **The oldest dependencies.** `composer.json` conflicts with `guzzlehttp/promises` before 2.0.3
-  and `guzzlehttp/psr7` before 2.6.3, the versions Guzzle 7.8.2 shipped with. Without it, the
-  lowest versions `^7.8.2` allows are psr7 1.9 and promises 1.5, which emit deprecations on PHP
-  8.2 and later from a certificate upload (dynamic properties of `MultipartStream`) and at
-  autoload on 8.5. It adds no requirement but narrows what the owner's Guzzle constraint can
-  install. Composer 2.9 and later also refuse, by default, versions with security advisories,
-  among them every Guzzle 7 before 7.15.2: the CI job of the lowest versions turns that off
-  (`audit.block-insecure`) and prints the versions it tested. Whether to raise the constraint to
-  `^7.15.2 || ^8.0.1` (Laravel 11 and 12 accept it) is the owner's call.
+- **The oldest dependencies.** Guzzle 7.15.2, psr7 2.13 and promises 2.5.1 since 2026-11-14
+  (above), which Composer installs with its audit on. Before, `composer.json` conflicted with
+  `guzzlehttp/promises` before 2.0.3 and `guzzlehttp/psr7` before 2.6.3, the versions Guzzle 7.8.2
+  shipped with: without it, the lowest versions `^7.8.2` allowed were psr7 1.9 and promises 1.5,
+  which emit deprecations on PHP 8.2 and later from a certificate upload (dynamic properties of
+  `MultipartStream`) and at autoload on 8.5. Guzzle 7.15.2 requires newer ones, so the conflicts
+  are gone, and the CI job of the lowest versions no longer turns off Composer's refusal of
+  versions with security advisories (`audit.block-insecure`).
 - **Layout.** The client is `Flashpi\Flashpi`; next to it are `Page`, `ApiResponse`, `Webhooks`
   and `Version`. Exceptions are in `Flashpi\Exception`, types in `Flashpi\Types`, and the engine,
   the request specs and the bases of the resources in `Flashpi\Internal` (all `@internal`). Classes
@@ -72,20 +103,21 @@ and are listed so they can be confirmed or changed before 1.0.
   response header in any letter case (`headers` holds them by lowercase name).
   `idempotencyKey` is the only property the SDK sets after creating the exception, so it is not
   read-only.
-- **Misused arguments.** What PHP's native types catch throws a `\TypeError` (under strict
-  types); what they cannot throws an `\InvalidArgumentException`: an unknown option (a
-  `TypeError` in Python), an option, header name or header value that is not a string, a header
-  value with a line break or another control character, a bad header name, `Content-Length` or
-  `Transfer-Encoding`, a query value that is not a string, a number or a boolean, a body
-  `json_encode()` refuses, and a webhook tolerance or time that is not finite (or a negative
-  tolerance). Timeouts, `maxRetries`, ids, `baseUrl` and the API key stay `FlashpiException`, as
-  in Node and Python.
-- **Headers.** Python's rules, with two differences that come from PHP's strings being bytes:
-  bytes that are not UTF-8 are not refused (PSR-7 sends them as obs-text), and there is no lone
-  surrogate to refuse. As in Python, only `Content-Length` and `Transfer-Encoding` are refused; the
-  Node SDK also refuses `Keep-Alive`, `Upgrade` and `Expect`. A request PSR-7 refuses to build
-  throws a `FlashpiException` that is not retried, without PSR-7's reason, which quotes the
-  refused value.
+- **Misused arguments.** What PHP's native types catch throws a `\TypeError` (under strict types);
+  what they cannot throws an `\InvalidArgumentException`: an unknown option (a `TypeError` in
+  Python), an option, header name or header value that is not a string, a header value with a line
+  break or another control character, a bad header name, `Content-Length`, `Transfer-Encoding`,
+  `Keep-Alive`, `Upgrade` or `Expect`, a query value that is not a string, a number or a boolean, a
+  body `json_encode()` refuses, and a webhook tolerance or time that is not finite (or a negative
+  tolerance). Timeouts, `maxRetries`, ids, `baseUrl` and the API key stay `FlashpiException`, as in
+  Node and Python.
+- **Headers.** Python's rules, with two differences that come from PHP's strings being bytes: bytes
+  that are not UTF-8 are not refused (PSR-7 sends them as obs-text), and there is no lone surrogate
+  to refuse. `Content-Length` and `Transfer-Encoding` are refused, as in Python, and so are
+  `Keep-Alive`, `Upgrade` and `Expect` since 2026-11-14, as in Node: in any letter case, in a
+  request's `extraHeaders` and the client's `defaultHeaders`, with a message that names the header
+  and never its value. A request PSR-7 refuses to build throws a `FlashpiException` that is not
+  retried, without PSR-7's reason, which quotes the refused value.
 - **Transfer failures.** Every failure of a Guzzle transfer is retried, as a `TimeoutException`
   (Guzzle 8's timeout classes, curl's error 28 on Guzzle 7, or the attempt's deadline passed) or
   a `ConnectionException` whose message carries Guzzle's. Guzzle 7 and 8 classify failures
@@ -113,14 +145,15 @@ and are listed so they can be confirmed or changed before 1.0.
   tenth of it (0.5 s allows 0.05 s between two packets of the body, 2.5 s allows 2.05 s), which
   would cut a body short well inside the deadline. The curl handler limits the whole transfer on
   Guzzle 7 and 8. The SDK then reads the body itself, checking the deadline as each piece arrives
-  and once the answer is read, so an answer whose end comes late fails with any handler. The
-  stream handler (PHP without the curl extension, or a caller's client built on it) limits the
-  headers only between packets, on both majors: headers that trickle in keep an attempt going
-  past its timeout, and the answer is refused once they are complete. For the body, Guzzle 8's
-  stream handler stops at the deadline, while Guzzle 7's limits each read only (to the whole
-  seconds of `read_timeout`), so an answer that trickles in is refused once it has arrived.
-  Python's client limits every network operation to the time left and has no such gap.
-  `composer.json` suggests `ext-curl` for this; Guzzle stays the only dependency.
+  and once the answer is read, so an answer whose end comes late fails with any handler. The stream
+  handler (PHP without the curl extension, or a caller's client built on it) limits the headers
+  only between packets, on both majors: headers that trickle in keep an attempt going past its
+  timeout, and the answer is refused once they are complete. For the body, Guzzle 8's stream
+  handler stops at the deadline, while Guzzle 7's limits each read only (to the whole seconds of
+  `read_timeout`), so an answer that trickles in is refused once it has arrived. Python's client
+  limits every network operation to the time left and has no such gap. `composer.json` suggests
+  `ext-curl` for this; Guzzle stays the only dependency. The owner kept it so on 2026-11-14
+  (above).
 - **Bodies and answers.** A JSON body is encoded once with `JSON_UNESCAPED_SLASHES` and
   `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; objects (`JsonSerializable`) are accepted. PHP
   has one empty array for an empty list and an empty object, so an empty array, at any depth, is
@@ -250,10 +283,11 @@ and are listed so they can be confirmed or changed before 1.0.
   and call those classes: `phpunit.xml.dist` leaves them out, and CI runs them as steps.
 - **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate
   --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
-  tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle
-  7 (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions on PHP 8.2
-  only (PHPUnit 11.5.0 prints a deprecation of its own on 8.5); and the archive, checked by
-  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP
-  8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
-  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags.
-  PHP comes from `shivammathur/setup-php`, pinned by commit like every action.
+  tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7
+  (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions (Guzzle 7.15.2) on
+  PHP 8.2 only (PHPUnit 11.5.0 prints a deprecation of its own on 8.5); and the archive, checked by
+  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP 8.2
+  and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
+  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags. PHP
+  comes from `shivammathur/setup-php`, pinned by commit like every action (2.40.0 since
+  2026-11-14).
