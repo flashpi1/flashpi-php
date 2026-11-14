@@ -41,6 +41,9 @@ use Flashpi\Page;
  */
 abstract class Resource
 {
+    /** Where a withResponse() call keeps the response (null outside such a call). */
+    private ?Recorder $recorder = null;
+
     /**
      * A resource with nested resources builds them in its own constructor, after calling this one:
      *
@@ -55,6 +58,19 @@ abstract class Resource
      * @internal Built by the client.
      */
     public function __construct(protected readonly Engine $engine) {}
+
+    /**
+     * A copy of this resource that keeps in `$recorder` the responses its calls get (withResponse()).
+     *
+     * @internal Used by ResponseView.
+     */
+    final public function recordingInto(Recorder $recorder): static
+    {
+        $copy = clone $this;
+        $copy->recorder = $recorder;
+
+        return $copy;
+    }
 
     /**
      * Sends the request (with its retries) and returns its data.
@@ -77,7 +93,7 @@ abstract class Resource
     final protected function sendForResponse(RequestSpec $spec): ApiResponse
     {
         $result = $this->engine->request($spec);
-        $this->engine->record($result);
+        $this->recorder?->keep($result);
 
         return $result;
     }
@@ -92,7 +108,7 @@ abstract class Resource
     final protected function paginate(RequestSpec $spec): Page
     {
         $first = $this->fetchPage($spec, $spec);
-        $this->engine->record($first);
+        $this->recorder?->keep($first);
 
         return $first->data;
     }
@@ -108,7 +124,7 @@ abstract class Resource
      */
     final protected function view(string $view): ResponseView
     {
-        return new $view($this, $this->engine);
+        return new $view($this);
     }
 
     /**

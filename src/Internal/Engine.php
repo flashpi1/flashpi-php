@@ -84,13 +84,6 @@ final class Engine
 
     private Clock $clock;
 
-    /**
-     * The responses recorded for the withResponse() calls running, innermost last.
-     *
-     * @var list<ApiResponse<mixed>|null>
-     */
-    private array $captures = [];
-
     public function __construct(
         private readonly ClientConfig $config,
         private readonly ClientInterface $http,
@@ -226,46 +219,6 @@ final class Engine
         $delay = min(self::INITIAL_RETRY_DELAY * 2 ** min($retries, 16), self::MAX_RETRY_DELAY);
 
         return round($delay * (1 - $this->clock->random() * 0.25), 3);
-    }
-
-    /**
-     * Runs a call and returns its data with the response it came from: the last response a
-     * resource recorded during the call (Node's withResponse()).
-     *
-     * @param \Closure(): mixed $call
-     *
-     * @return ApiResponse<mixed>
-     *
-     * @throws FlashpiException When the call sent no request.
-     */
-    public function capture(\Closure $call): ApiResponse
-    {
-        $this->captures[] = null;
-        $index = array_key_last($this->captures);
-        try {
-            $data = $call();
-            $captured = $this->captures[$index] ?? null;
-        } finally {
-            array_pop($this->captures);
-        }
-        if ($captured === null) {
-            throw new FlashpiException('The call sent no request, so there is no response to return');
-        }
-
-        return new ApiResponse($data, $captured->response, $captured->requestId);
-    }
-
-    /**
-     * Keeps the response of a resource call for the capture() running, if any.
-     *
-     * @param ApiResponse<mixed> $result
-     */
-    public function record(ApiResponse $result): void
-    {
-        if ($this->captures !== []) {
-            array_pop($this->captures);
-            $this->captures[] = $result;
-        }
     }
 
     /**

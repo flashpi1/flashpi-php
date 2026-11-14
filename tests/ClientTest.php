@@ -8,6 +8,7 @@ use Flashpi\ApiResponse;
 use Flashpi\Exception\FlashpiException;
 use Flashpi\Flashpi;
 use Flashpi\Internal\Engine;
+use Flashpi\Internal\Recorder;
 use Flashpi\Resources\Invoices;
 use Flashpi\Tests\Support\Forms;
 use Flashpi\Tests\Support\MockApi;
@@ -18,6 +19,8 @@ use Flashpi\Version;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * The client and the requests it sends (Python: tests/test_client.py).
@@ -435,6 +438,35 @@ final class ClientTest extends TestCase
         self::assertSame('{"id":"' . Replies::ID . '"}', $result->response->getBody()->__toString());
     }
 
+    public function testKeepsTheResponseOfEachViewCallWhenCallsInterleaveInFibers(): void
+    {
+        // A handler that suspends the calling fiber before it answers, as a fiber-aware event loop
+        // does: both calls are running on the one client when either gets its answer.
+        $answer = static function (RequestInterface $request): ResponseInterface {
+            \Fiber::suspend();
+            $id = basename($request->getUri()->getPath());
+
+            return Replies::json(['id' => $id], 200, ['X-Request-Id' => "req_{$id}"]);
+        };
+        foreach (['first in, first out' => ['a', 'b'], 'last in, first out' => ['b', 'a']] as $order => $resumed) {
+            $api = self::api([$answer, $answer]);
+            $results = [];
+            $fibers = [];
+            foreach (['a', 'b'] as $id) {
+                $fibers[$id] = new \Fiber(static function () use ($api, $id, &$results): void {
+                    $result = $api->things->withResponse()->get($id);
+                    $results[$id] = [$result->data, $result->requestId];
+                });
+                $fibers[$id]->start();
+            }
+            foreach ($resumed as $id) {
+                $fibers[$id]->resume();
+            }
+            ksort($results);
+            self::assertSame(['a' => [['id' => 'a'], 'req_a'], 'b' => [['id' => 'b'], 'req_b']], $results, $order);
+        }
+    }
+
     public function testRefusesAViewCallThatSentNoRequestOrNamesNoMethod(): void
     {
         $api = self::api();
@@ -442,6 +474,7 @@ final class ClientTest extends TestCase
         self::throws(\BadMethodCallException::class, static fn() => $api->things->withResponse()->missing(), '/has no method missing\(\)/'); // @phpstan-ignore method.notFound
         self::throws(\BadMethodCallException::class, static fn() => $api->things->withResponse()->send(), '/has no method send\(\)/'); // @phpstan-ignore method.notFound
         self::throws(\BadMethodCallException::class, static fn() => $api->things->withResponse()->withResponse()); // @phpstan-ignore method.notFound
+        self::throws(\BadMethodCallException::class, static fn() => $api->things->withResponse()->recordingInto(new Recorder())); // @phpstan-ignore method.notFound
         self::assertSame(['resource' => \Flashpi\Tests\Support\Things::class], $api->things->withResponse()->__debugInfo());
         self::assertSame([], $api->things->__debugInfo());
     }

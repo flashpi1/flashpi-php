@@ -26,10 +26,7 @@ abstract class ResponseView
     /**
      * @internal Built by Resource::view().
      */
-    final public function __construct(
-        private readonly Resource $resource,
-        private readonly Engine $engine,
-    ) {}
+    final public function __construct(private readonly Resource $resource) {}
 
     /**
      * @param array<array-key, mixed> $arguments
@@ -41,11 +38,18 @@ abstract class ResponseView
      */
     public function __call(string $name, #[\SensitiveParameter] array $arguments): ApiResponse
     {
-        if ($name === 'withResponse' || !\is_callable([$this->resource, $name])) {
+        if ($name === 'withResponse' || $name === 'recordingInto' || !\is_callable([$this->resource, $name])) {
             throw new \BadMethodCallException(\sprintf('%s has no method %s()', $this->resource::class, $name));
         }
+        // A recorder of this call's own, on a copy of the resource: the response is this call's
+        // even when calls on the same client interleave (fibers).
+        $recorder = new Recorder();
+        $data = $this->resource->recordingInto($recorder)->{$name}(...$arguments);
+        if ($recorder->response === null) {
+            throw new FlashpiException('The call sent no request, so there is no response to return');
+        }
 
-        return $this->engine->capture(fn(): mixed => $this->resource->{$name}(...$arguments));
+        return new ApiResponse($data, $recorder->response->response, $recorder->response->requestId);
     }
 
     /**

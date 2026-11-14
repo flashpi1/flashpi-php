@@ -122,7 +122,10 @@ and are listed so they can be confirmed or changed before 1.0.
   (`$flashpi->documents->withResponse()->get($id)`) whose methods are declared with `@method`
   tags: it runs the resource's method and returns an `ApiResponse` with its data, the PSR-7
   response the method got and the request id. A method that sends nothing throws a
-  `FlashpiException`, and a name the resource lacks a `\BadMethodCallException`.
+  `FlashpiException`, and a name the resource lacks a `\BadMethodCallException`. Each call runs
+  on a copy of the resource with a recorder of its own (Python's context variable), so calls
+  that interleave on one client in fibers (an event loop's Guzzle handler) never read each
+  other's response.
 - **Resources.** One final class per resource in `Flashpi\Resources`, with its view next to it
   (`DocumentsWithResponse`). The client's properties are Python's names in camelCase:
   `invoices`, `creditNotes`, `debitNotes`, `purchaseSettlements`, `waybills`, `withholdings`,
