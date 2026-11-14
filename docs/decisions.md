@@ -234,5 +234,15 @@ and are listed so they can be confirmed or changed before 1.0.
   aliases carry no description per member. PHPStan 2 seals array shapes only with its bleeding
   edge configuration: without it, a misspelled optional key is not reported. This repository
   enables it, and the READMEs' "Static analysis" section tells consumers to.
-- **Coverage.** pcov only measures `src/` unless told otherwise: CI must pass
-  `-d pcov.directory=.` for the scripts to count.
+- **Coverage.** pcov only measures `src/` unless told otherwise: CI passes
+  `-d pcov.directory=.` for the scripts to count, and fails below 95 % of lines, as Python's
+  `fail_under`.
+- **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate
+  --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
+  tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle
+  7 (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions on PHP 8.2
+  only (PHPUnit 11.5.0 prints a deprecation of its own on 8.5); and the archive, checked by
+  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP
+  8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
+  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags.
+  PHP comes from `shivammathur/setup-php`, pinned by commit like every action.

@@ -1,0 +1,48 @@
+name: Live API test
+
+# Runs tests/Live against the real Flashpi API in test mode (SRI pruebas): it issues ONE test
+# invoice on the shared demo issuer (daily quota of 50 per account). So it only runs when the
+# Release workflow dispatches it on release-please's pull request, or by hand.
+#
+# Needs the organization secret FLASHPI_TEST_API_KEY (an fp_test_ key with read_write access)
+# and the organization variable FLASHPI_DEMO_ISSUER_ID (the demo issuer id from the console),
+# both shared with flashpi-node and flashpi-python.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-api
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: SDK against the live API (test mode)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.5'
+          coverage: none
+          tools: composer:v2
+      - run: composer update --no-interaction --no-progress
+      - name: Check the secret and the variable are set
+        env:
+          FLASHPI_TEST_API_KEY: ${{ secrets.FLASHPI_TEST_API_KEY }}
+          FLASHPI_DEMO_ISSUER_ID: ${{ vars.FLASHPI_DEMO_ISSUER_ID }}
+        run: |
+          if [ -z "$FLASHPI_TEST_API_KEY" ] || [ -z "$FLASHPI_DEMO_ISSUER_ID" ]; then
+            echo "::error::Set the FLASHPI_TEST_API_KEY secret and the FLASHPI_DEMO_ISSUER_ID variable"
+            exit 1
+          fi
+      - name: Run the live suite
+        env:
+          FLASHPI_TEST_API_KEY: ${{ secrets.FLASHPI_TEST_API_KEY }}
+          FLASHPI_DEMO_ISSUER_ID: ${{ vars.FLASHPI_DEMO_ISSUER_ID }}
+        run: composer test:live
