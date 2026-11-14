@@ -14,9 +14,13 @@ final class RetryAfter
     /** Longer digit strings are past any useful wait (and past PHP's integers). */
     private const MAX_DIGITS = 18;
 
-    /** The HTTP date formats (RFC 9110: IMF-fixdate, then the obsolete RFC 850 and asctime). */
+    /**
+     * The HTTP date formats (RFC 9110: IMF-fixdate, then the obsolete RFC 850 and asctime), with
+     * the variants Python's parsedate_to_datetime() reads too (a day of one digit, a numeric zone).
+     */
     private const HTTP_DATES = [
         '!D, d M Y H:i:s \G\M\T',
+        '!D, j M Y H:i:s \G\M\T',
         '!D, d M Y H:i:s O',
         '!d M Y H:i:s O',
         '!d M Y H:i:s \G\M\T',
@@ -42,7 +46,8 @@ final class RetryAfter
         if (preg_match('/^[0-9]+\z/', $trimmed) === 1) {
             return \strlen($trimmed) <= self::MAX_DIGITS ? (int) $trimmed : 10 ** self::MAX_DIGITS;
         }
-        $moment = self::date($trimmed);
+        // asctime pads a day of one digit with a second space (`Sun Nov  6 08:49:37 1994`).
+        $moment = self::date((string) preg_replace('/[ \t]+/', ' ', $trimmed));
         if ($moment === null) {
             return null;
         }

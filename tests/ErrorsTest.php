@@ -131,6 +131,12 @@ final class ErrorsTest extends TestCase
         self::assertSame(0, RetryAfter::parse('Fri, 13 Nov 2026 11:59:00 GMT', $now));
         self::assertSame(2, RetryAfter::parse('Friday, 13-Nov-26 12:00:02 GMT', $now));
         self::assertSame(2, RetryAfter::parse('Fri Nov 13 12:00:02 2026', $now));
+        // A day of one digit: asctime pads it with a space (RFC 9110's own example), and an
+        // IMF-fixdate written without its zero is read too, as Python reads it.
+        self::assertSame(96800, RetryAfter::parse('Fri Aug  7 10:00:00 2026', 1786000000.0));
+        self::assertSame(0, RetryAfter::parse('Sun Nov  6 08:49:37 1994', $now));
+        self::assertSame(96800, RetryAfter::parse('Fri, 7 Aug 2026 10:00:00 GMT', 1786000000.0));
+        self::assertNull(RetryAfter::parse('Fri Aug 7 10:00:00', 1786000000.0));
         self::assertSame(2, RetryAfter::parse('Fri, 13 Nov 2026 07:00:02 -0500', $now));
         self::assertSame(2, RetryAfter::parse('2026-11-13T12:00:01.500Z', $now));
         self::assertSame(5, RetryAfter::parse('2026-11-13T12:00:05', $now));
