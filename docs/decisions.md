@@ -289,9 +289,10 @@ The owner confirmed every one of them on 2026-11-14.
   --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
   tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7
   (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions (Guzzle 7.15.2) on
-  PHP 8.2 only (PHPUnit 11.5.0 prints a deprecation of its own on 8.5); and the archive, checked by
-  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP 8.2
-  and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
-  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags. PHP
-  comes from `shivammathur/setup-php`, pinned by commit like every action (2.40.0 since
-  2026-11-14).
+  PHP 8.2 only (PHPUnit 11.5.0, the lowest with Composer's audit off, prints a deprecation of its
+  own on 8.5; with the audit on, since 2026-11-14, the lowest is 11.5.50, which passes on 8.5 too);
+  and the archive, checked by `scripts/package_check.php`, then installed in a clean project with
+  each Guzzle major on PHP 8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`,
+  `openapi-sync.yml`, `release.yml` and `dependabot.yml` follow Python's, without a build or
+  publish job: Packagist reads the tags. PHP comes from `shivammathur/setup-php`, pinned by commit
+  like every action (2.40.0 since 2026-11-14).
