@@ -295,6 +295,11 @@ final class Engine
      * The options of every attempt for Guzzle: no redirects, no exceptions for error statuses,
      * one deadline for the transfer.
      *
+     * `read_timeout` is the timeout rounded up to whole seconds: Guzzle 7's stream handler turns
+     * its fraction into a tenth of it (0.5 s allows 0.05 s between two packets of the body), so
+     * a fraction would cut a body short well before the deadline. The deadline still bounds the
+     * attempt, and Guzzle 8 bounds each read by it too.
+     *
      * @return array{
      *     allow_redirects: false,
      *     http_errors: false,
@@ -319,7 +324,7 @@ final class Engine
             'decode_content' => true,
             'timeout' => $seconds,
             'connect_timeout' => $seconds,
-            'read_timeout' => $seconds,
+            'read_timeout' => ceil($seconds),
         ];
     }
 

@@ -155,6 +155,18 @@ final class DeadlineTest extends TestCase
     }
 
     #[Group('network')]
+    public function testTheStreamHandlerWaitsForABodyThatPausesWithinTheDeadline(): void
+    {
+        // Guzzle 7's stream handler would limit each read to a tenth of a fractional read_timeout:
+        // 0.05 s of the 0.5 s, so the body after a 0.3 s pause failed as a ConnectionException.
+        $http = new Client(['handler' => HandlerStack::create(new StreamHandler())]);
+        $stream = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 0.5, maxRetries: 0, httpClient: $http);
+        self::assertSame(['status' => 'operational'], self::get($stream, '/body-pause?delay=0.3'));
+        // A pause past the deadline still fails it, as a timeout.
+        self::throws(TimeoutException::class, static fn() => self::get($stream, '/body-pause?delay=0.8'), '/timed out after 0\.5 seconds$/');
+    }
+
+    #[Group('network')]
     public function testReadsAnAnswerThatArrivesInTimeOverASocket(): void
     {
         $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::url(), timeout: 5.0, maxRetries: 0);

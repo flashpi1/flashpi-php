@@ -192,7 +192,8 @@ final class RetriesTest extends TestCase
         $api->things->status(['timeout' => 2]);
         self::assertSame(7.5, $api->options[0]['timeout'] ?? null);
         self::assertSame(7.5, $api->options[0]['connect_timeout'] ?? null);
-        self::assertSame(7.5, $api->options[0]['read_timeout'] ?? null);
+        // Whole seconds: Guzzle 7's stream handler makes a tenth of the fraction (DeadlineTest).
+        self::assertSame(8.0, $api->options[0]['read_timeout'] ?? null);
         self::assertSame(2.0, $api->options[1]['timeout'] ?? null);
         self::assertFalse($api->options[1]['http_errors'] ?? null);
         self::assertFalse($api->options[1]['expect'] ?? null);

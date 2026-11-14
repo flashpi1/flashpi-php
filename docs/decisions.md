@@ -104,17 +104,20 @@ and are listed so they can be confirmed or changed before 1.0.
   itself for Guzzle 7's stream handler, which returns what arrived (a body the handler decoded
   carries no `Content-Length` of its own and is not compared). httpx raises a network error
   there.
-- **The deadline of an attempt.** Guzzle's `timeout`, `connect_timeout` and `read_timeout` are
-  the attempt's timeout (at least one millisecond, Guzzle 8's floor). The curl handler limits the
-  whole transfer on Guzzle 7 and 8. The SDK then reads the body itself, checking the deadline as
-  each piece arrives and once the answer is read, so an answer whose end comes late fails with
-  any handler. The stream handler (PHP without the curl extension, or a caller's client built on
-  it) limits the headers only between packets, on both majors: headers that trickle in keep an
-  attempt going past its timeout, and the answer is refused once they are complete. For the body,
-  Guzzle 8's stream handler stops at the deadline, while Guzzle 7's limits each read only, so an
-  answer that trickles in is refused once it has arrived. Python's client limits every network
-  operation to the time left and has no such gap. `composer.json` suggests `ext-curl` for this;
-  Guzzle stays the only dependency.
+- **The deadline of an attempt.** Guzzle's `timeout` and `connect_timeout` are the attempt's
+  timeout (at least one millisecond, Guzzle 8's floor), and `read_timeout` is that timeout rounded
+  up to whole seconds: Guzzle 7's stream handler turns the fraction of a `read_timeout` into a
+  tenth of it (0.5 s allows 0.05 s between two packets of the body, 2.5 s allows 2.05 s), which
+  would cut a body short well inside the deadline. The curl handler limits the whole transfer on
+  Guzzle 7 and 8. The SDK then reads the body itself, checking the deadline as each piece arrives
+  and once the answer is read, so an answer whose end comes late fails with any handler. The
+  stream handler (PHP without the curl extension, or a caller's client built on it) limits the
+  headers only between packets, on both majors: headers that trickle in keep an attempt going
+  past its timeout, and the answer is refused once they are complete. For the body, Guzzle 8's
+  stream handler stops at the deadline, while Guzzle 7's limits each read only (to the whole
+  seconds of `read_timeout`), so an answer that trickles in is refused once it has arrived.
+  Python's client limits every network operation to the time left and has no such gap.
+  `composer.json` suggests `ext-curl` for this; Guzzle stays the only dependency.
 - **Bodies and answers.** A JSON body is encoded once with `JSON_UNESCAPED_SLASHES` and
   `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; objects (`JsonSerializable`) are accepted. PHP
   has one empty array for an empty list and an empty object, so an empty array, at any depth, is
