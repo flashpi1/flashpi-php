@@ -7,21 +7,29 @@ Decisions about flashpi/flashpi-php, the PHP SDK, newest first. Its design follo
 [Python](https://github.com/flashpi1/flashpi-python/blob/main/docs/decisions.md)) apply here unless
 an entry says otherwise. Every entry is the Flashpi product owner's: some were taken with the
 owner, and the others were chosen while porting, after the Python SDK where the owner had not
-decided, and confirmed by the owner on 2026-11-14. The exceptions, found or changed after the
-owner's answers and not decided by the owner, are listed at the end of the 2026-11-14 entry.
+decided, and confirmed by the owner on 2026-11-14.
 
 ## 2026-11-14: the owner's answers
 
 The owner answered the questions the port left open and confirmed every other choice.
 
-- **Guzzle 7.15.2 or 8.0.1 at least.** `"guzzlehttp/guzzle": "^7.15.2 || ^8.0.1"`: older versions
-  have security advisories (CVE-2026-69246, CVE-2026-69245, CVE-2026-67354 and CVE-2026-67355),
-  and Composer 2.9 and later refuse to install them by default. Laravel 11 and 12 accept it.
-  Guzzle 7.15.2 requires psr7 2.13 and promises 2.5.1, and Guzzle 8 their third majors, so the
-  conflicts with psr7 before 2.6.3 and promises before 2.0.3 no longer narrow anything: they are
-  gone. CI tests the lowest versions with each major, with Composer's audit on, as a user's
-  Composer installs them: Guzzle 7.15.2 with psr7 2.13.0 and promises 2.5.1, and Guzzle 8.0.1
-  with psr7 3.0.0 and promises 3.0.0.
+- **Guzzle 7.15.2 or 8.3 at least.** `"guzzlehttp/guzzle": "^7.15.2 || ^8.3"`, which Laravel 11 and
+  12 accept. Guzzle 7 before 7.15.2 and Guzzle 8 before 8.0.1 have security advisories
+  (CVE-2026-69246, CVE-2026-69245, CVE-2026-67354 and CVE-2026-67355), and Composer 2.9 and later
+  refuse to install them by default. The stream handler of Guzzle 8.0 to 8.2 returns a chunked
+  answer cut before its last chunk as if it were complete, as Guzzle 7's does; 8.3.0, released
+  2026-10-18, fails the transfer, so the SDK retries it. The owner first answered `^8.0.1`; testing
+  it found that gap, and the owner raised the Guzzle 8 floor to 8.3. Guzzle 7.15.2 requires psr7
+  2.13 and promises 2.5.1, and Guzzle 8.3 psr7 3.2 and promises 3.1, so the conflicts with psr7
+  before 2.6.3 and promises before 2.0.3 no longer narrow anything: they are gone. CI tests the
+  lowest versions with each major, with Composer's audit on, as a user's Composer installs them:
+  Guzzle 7.15.2 with psr7 2.13.0 and promises 2.5.1, and Guzzle 8.3.0 with psr7 3.2.0 and promises
+  3.1.0.
+- **The lowest versions on PHP 8.2 and 8.5.** The CI job of the lowest versions ran on PHP 8.2 only
+  because PHPUnit 11.5.0 printed a deprecation of its own on 8.5. With Composer's audit on, the
+  lowest PHPUnit is 11.5.50, which does not, so the job runs on PHP 8.2 and 8.5, with each Guzzle
+  major ("CI" below). Testing the answers found it, and the owner kept both versions. It changes
+  what CI tests, not the SDK.
 - **Keep-Alive, Upgrade and Expect are refused**, as in Node, besides `Content-Length` and
   `Transfer-Encoding`: in a request's `extraHeaders` and the client's `defaultHeaders`, in any
   letter case, with the same `\InvalidArgumentException`, whose message names the header and
@@ -42,19 +50,6 @@ The owner answered the questions the port left open and confirmed every other ch
   `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`; and `getenv()` in the plain
   PHP examples, with Laravel's and Symfony's configuration in theirs.
 
-Found or changed after the answers, and not decided by the owner:
-
-- **Guzzle 8 before 8.3.** Testing the new lowest Guzzle 8 showed that the stream handler of
-  Guzzle 8.0.1 to 8.2.1, like Guzzle 7's, returns a chunked answer cut before its last chunk as it
-  arrived; 8.3.0 and later fail the transfer. For now it is documented as Guzzle 7's is (the
-  READMEs, "Transfer failures" below), and `tests/DeadlineTest.php` pins it by version, which CI's
-  lowest job runs with Guzzle 8.0.1. Whether to keep `^8.0.1` or raise the Guzzle 8 floor to
-  `^8.3` is the owner's call.
-- **The lowest versions on PHP 8.5 too.** The CI job of the lowest versions ran on PHP 8.2 only
-  because PHPUnit 11.5.0 printed a deprecation of its own on 8.5. With Composer's audit on, the
-  lowest PHPUnit is 11.5.50, which does not, so the job runs on PHP 8.2 and 8.5 ("CI" below). It
-  changes what CI tests, not the SDK.
-
 ## 2026-11-13: the PHP SDK
 
 ### The owner's decisions
@@ -63,7 +58,7 @@ Found or changed after the answers, and not decided by the owner:
   repository `flashpi1/flashpi-php`, MIT license held by SIGNIADIGITAL S.A. PHP 8.2 or later,
   tested on 8.2 to 8.5. First version 0.1.0 through release-please. Packagist reads the tags from
   GitHub: there is no upload or publish job, and the owner submits the repository to Packagist.
-- **One runtime dependency.** Guzzle, `^7.15.2 || ^8.0.1` since 2026-11-14, `^7.8.2 || ^8.0` before
+- **One runtime dependency.** Guzzle, `^7.15.2 || ^8.3` since 2026-11-14, `^7.8.2 || ^8.0` before
   (Laravel 11 and 12 need 7, Laravel 13 takes both), tested on both majors. A caller can pass a
   Guzzle client of their own (`GuzzleHttp\ClientInterface`).
 - **Models are arrays.** Associative arrays with the API's camelCase keys
@@ -83,15 +78,14 @@ Found or changed after the answers, and not decided by the owner:
 The choices below were made while porting, after the Python SDK where the owner had not decided.
 The owner confirmed every one of them on 2026-11-14.
 
-- **The oldest dependencies.** Guzzle 7.15.2 (psr7 2.13.0, promises 2.5.1) and Guzzle 8.0.1
-  (psr7 3.0.0, promises 3.0.0) since 2026-11-14 (above), which Composer installs with its audit
-  on. Before, `composer.json` conflicted with
-  `guzzlehttp/promises` before 2.0.3 and `guzzlehttp/psr7` before 2.6.3, the versions Guzzle 7.8.2
-  shipped with: without it, the lowest versions `^7.8.2` allowed were psr7 1.9 and promises 1.5,
-  which emit deprecations on PHP 8.2 and later from a certificate upload (dynamic properties of
-  `MultipartStream`) and at autoload on 8.5. Guzzle 7.15.2 requires newer ones, so the conflicts
-  are gone, and the CI job of the lowest versions no longer turns off Composer's refusal of
-  versions with security advisories (`audit.block-insecure`).
+- **The oldest dependencies.** Guzzle 7.15.2 (psr7 2.13.0, promises 2.5.1) and Guzzle 8.3.0 (psr7
+  3.2.0, promises 3.1.0) since 2026-11-14 (above), which Composer installs with its audit on.
+  Before, `composer.json` conflicted with `guzzlehttp/promises` before 2.0.3 and `guzzlehttp/psr7`
+  before 2.6.3, the versions Guzzle 7.8.2 shipped with: without it, the lowest versions `^7.8.2`
+  allowed were psr7 1.9 and promises 1.5, which emit deprecations on PHP 8.2 and later from a
+  certificate upload (dynamic properties of `MultipartStream`) and at autoload on 8.5. Guzzle 7.15.2
+  requires newer ones, so the conflicts are gone, and the CI job of the lowest versions no longer
+  turns off Composer's refusal of versions with security advisories (`audit.block-insecure`).
 - **Layout.** The client is `Flashpi\Flashpi`; next to it are `Page`, `ApiResponse`, `Webhooks`
   and `Version`. Exceptions are in `Flashpi\Exception`, types in `Flashpi\Types`, and the engine,
   the request specs and the bases of the resources in `Flashpi\Internal` (all `@internal`). Classes
@@ -148,12 +142,11 @@ The owner confirmed every one of them on 2026-11-14.
   errors through, but httpx's request hides the key. A caller's client that throws for error
   statuses (`BadResponseException`) gets its response read as the API's answer. An answer cut short
   is a retried `ConnectionException` too with curl and with Guzzle 8's stream handler, which fail
-  the transfer (httpx and Node raise a network error there); before 8.3.0, though, Guzzle 8's
-  stream handler misses a chunked answer cut before its last chunk, as below (found after the
-  owner's answers and not decided by the owner: see 2026-11-14). Guzzle 7's stream handler returns
-  what arrived: the SDK compares a body framed by `Content-Length` with it itself, but it cannot
-  tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and Guzzle 8's
-  stream handler notices it only from 8.3.0 on) or a compressed answer cut short (Guzzle 7 inflates
+  the transfer (httpx and Node raise a network error there). Before 8.3.0, Guzzle 8's stream
+  handler returned a chunked answer cut before its last chunk as it arrived, so the SDK requires
+  8.3 since 2026-11-14 (above). Guzzle 7's stream handler returns what arrived: the SDK compares a
+  body framed by `Content-Length` with it itself, but it cannot tell a chunked answer cut before its
+  last chunk (PHP's http wrapper hides it) or a compressed answer cut short (Guzzle 7 inflates
   what arrived and drops the `Content-Length`), which are returned as they arrived. The API frames
   its answers with `Content-Length` and the SDK sends no `Accept-Encoding`, so this needs an
   intermediary that re-frames or compresses them, or a caller that asks for compression;
@@ -300,14 +293,13 @@ The owner confirmed every one of them on 2026-11-14.
   `-d pcov.directory=.` for the scripts' classes to count, and fails below 95 % of lines, as
   Python's `fail_under`. The command-line entry points of `scripts/` only read their arguments
   and call those classes: `phpunit.xml.dist` leaves them out, and CI runs them as steps.
-- **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate
-  --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
-  tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7
-  (its psr7 lacks Guzzle 8's generics the test helpers use); the lowest versions with each Guzzle
-  major (Guzzle 7.15.2 and 8.0.1, since 2026-11-14) on PHP 8.2 and 8.5 (on 8.2 only before
-  2026-11-14; 8.5 was added after the owner's answers, see 2026-11-14); and the archive, checked by
-  `scripts/package_check.php`, then installed in a clean project with each Guzzle major on PHP 8.2
-  and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`, `release.yml` and
-  `dependabot.yml` follow Python's, without a build or publish job: Packagist reads the tags. PHP
-  comes from `shivammathur/setup-php`, pinned by commit like every action (2.40.0 since
-  2026-11-14).
+- **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate --strict`,
+  the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the tests on PHP 8.2
+  to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7 (its psr7 lacks
+  Guzzle 8's generics the test helpers use); the lowest versions with each Guzzle major (Guzzle
+  7.15.2 and 8.3.0, since 2026-11-14) on PHP 8.2 and 8.5 (on 8.2 only before 2026-11-14, above); and
+  the archive, checked by `scripts/package_check.php`, then installed in a clean project with each
+  Guzzle major on PHP 8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`,
+  `release.yml` and `dependabot.yml` follow Python's, without a build or publish job: Packagist
+  reads the tags. PHP comes from `shivammathur/setup-php`, pinned by commit like every action
+  (2.40.0 since 2026-11-14).
