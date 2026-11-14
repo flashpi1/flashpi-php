@@ -324,6 +324,7 @@ final class Engine
         if ($this->clock->now() > $deadline) {
             throw $this->timeoutError($spec, $call);
         }
+        self::checkLength($response, $content, $spec, $call);
 
         return $this->answer($response, $content, $spec->responseType);
     }
@@ -391,6 +392,32 @@ final class Engine
         }
 
         return $content;
+    }
+
+    /**
+     * Refuses an answer whose connection closed before the body its Content-Length declares.
+     *
+     * curl and Guzzle 8's stream handler report it as a failed transfer; Guzzle 7's stream handler
+     * returns what arrived, which would be a truncated PDF or JSON that does not parse. It is a
+     * network failure, retried like one. A body the handler decoded (gzip) carries no
+     * Content-Length of its own, so it is not compared.
+     *
+     * @throws ConnectionException
+     */
+    private static function checkLength(ResponseInterface $response, string $content, RequestSpec $spec, Call $call): void
+    {
+        $declared = $response->getHeaderLine('Content-Length');
+        if (
+            !ctype_digit($declared)
+            || $response->hasHeader('Content-Encoding')
+            || $response->hasHeader('X-Encoded-Content-Length')
+            || \in_array($response->getStatusCode(), [204, 304], true)
+            || \strlen($content) >= (int) $declared
+        ) {
+            return;
+        }
+
+        throw new ConnectionException("{$spec->method} {$call->url} failed: the answer ended after " . \strlen($content) . " of its {$declared} bytes");
     }
 
     /**

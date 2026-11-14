@@ -85,7 +85,12 @@ and are listed so they can be confirmed or changed before 1.0.
   httpx's could. Guzzle's exception is never kept as the previous one: it holds the request,
   whose `Authorization` header carries the API key. Other throwables (a bug in a middleware, an
   invalid Guzzle option) are thrown as they are. A caller's client that throws for error
-  statuses (`BadResponseException`) gets its response read as the API's answer.
+  statuses (`BadResponseException`) gets its response read as the API's answer. An answer whose
+  body ends before its `Content-Length` is a retried `ConnectionException` too, whatever the
+  handler: curl and Guzzle 8's stream handler fail the transfer, and the SDK compares the length
+  itself for Guzzle 7's stream handler, which returns what arrived (a body the handler decoded
+  carries no `Content-Length` of its own and is not compared). httpx raises a network error
+  there.
 - **The deadline of an attempt.** Guzzle's `timeout`, `connect_timeout` and `read_timeout` are
   the attempt's timeout (at least one millisecond, Guzzle 8's floor). The curl handler limits the
   whole transfer on Guzzle 7 and 8, and so does Guzzle 8's stream handler. The SDK then reads the

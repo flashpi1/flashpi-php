@@ -18,6 +18,7 @@ use Flashpi\Tests\Support\TrickleStream;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\StreamHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\Group;
 use Psr\Http\Message\ResponseInterface;
@@ -143,6 +144,26 @@ final class DeadlineTest extends TestCase
         $http = new Client(['handler' => HandlerStack::create(new StreamHandler())]);
         $stream = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::url(), timeout: 5.0, httpClient: $http);
         self::assertSame(['status' => 'operational'], self::trickle($stream, 0.05));
+    }
+
+    #[Group('network')]
+    public function testRetriesAnAnswerCutShortBeforeItsContentLengthWithEveryHandler(): void
+    {
+        foreach (['stream' => new StreamHandler(), 'default' => null] as $label => $handler) {
+            $attempts = 0;
+            $stack = HandlerStack::create($handler);
+            $stack->push(Middleware::tap(static function () use (&$attempts): void {
+                $attempts++;
+            }));
+            $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::url(), timeout: 5.0, maxRetries: 1, httpClient: new Client(['handler' => $stack]));
+            MockApi::engine($client)->useClock(new FakeClock());
+            $error = self::throws(ConnectionException::class, static fn() => self::get($client, '/short'));
+            self::assertNotInstanceOf(TimeoutException::class, $error, $label);
+            self::assertStringStartsWith('GET ' . LocalServer::url() . '/short failed: ', $error->getMessage(), $label);
+            self::assertSame(2, $attempts, $label);
+            // A decoded body has no Content-Length of its own to fall short of.
+            self::assertSame(['status' => 'operational'], self::get($client, '/gzip'), $label);
+        }
     }
 
     #[Group('network')]

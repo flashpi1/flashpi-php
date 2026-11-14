@@ -30,6 +30,12 @@ switch ($path) {
         header('Content-Encoding: gzip');
         echo gzencode('{"status":"operational"}');
         break;
+    case '/short':
+        // An answer whose connection closes before the body its Content-Length declares.
+        header('Content-Type: application/json');
+        header('Content-Length: 500');
+        echo '{"status":"oper';
+        break;
     case '/redirect':
         header('Location: https://example.com/elsewhere', true, 302);
         break;

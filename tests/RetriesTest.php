@@ -139,6 +139,27 @@ final class RetriesTest extends TestCase
         self::assertCount(3, $api->sent);
     }
 
+    public function testRetriesAnAnswerShorterThanItsContentLength(): void
+    {
+        $short = static fn(string $type, string $body): Response => new Response(200, ['Content-Type' => $type, 'Content-Length' => '500'], $body);
+        $api = self::api([$short('application/pdf', '%PDF-1.7 cut'), $short('application/json', '{"status":"oper'), Replies::json(['ok' => true])]);
+        self::assertSame(['ok' => true], $api->things->status());
+        self::assertCount(3, $api->sent);
+
+        $api = self::api([$short('application/pdf', '%PDF-1.7 cut')], ['maxRetries' => 0]);
+        self::throws(ConnectionException::class, static fn() => $api->things->raw(Replies::ID), '/^GET https:\/\/api\.flashpi\.com\.ec\/v1\/things\/\S+\/pdf failed: the answer ended after 12 of its 500 bytes$/');
+
+        // A whole body, a decoded one and a 204 have nothing missing.
+        $api = self::api([
+            new Response(200, ['Content-Type' => 'application/pdf', 'Content-Length' => '5'], '%PDF-'),
+            new Response(200, ['Content-Type' => 'application/pdf', 'Content-Length' => '500', 'X-Encoded-Content-Length' => '500'], '%PDF-'),
+            new Response(200, ['Content-Type' => 'application/pdf', 'Content-Length' => '500', 'Content-Encoding' => 'br'], '%PDF-'),
+            new Response(204, ['Content-Length' => '500']),
+        ], ['maxRetries' => 0]);
+        $answers = [$api->things->raw('a'), $api->things->raw('b'), $api->things->raw('c'), $api->things->delete('d')];
+        self::assertSame(['%PDF-', '%PDF-', '%PDF-', null], $answers);
+    }
+
     public function testTimesOutASlowAttemptAndRetriesIt(): void
     {
         $clock = new FakeClock();
