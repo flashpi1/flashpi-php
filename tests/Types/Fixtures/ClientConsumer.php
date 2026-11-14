@@ -13,6 +13,7 @@ use Flashpi\Flashpi;
 use Flashpi\Page;
 use Flashpi\Types\ApiTypes;
 use Flashpi\Webhooks;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * The client's API used the way a consumer uses it. PHPStan analyses it at level max with the rest
@@ -85,5 +86,18 @@ final class ClientConsumer
         (new Webhooks())->verifySignature($body, $headers, $secret, tolerance: 60, now: new \DateTimeImmutable());
 
         return null;
+    }
+
+    /**
+     * The headers as a server hands them over: a PSR-7 request's getHeaders() and getallheaders().
+     */
+    public static function webhookFromAServer(ServerRequestInterface $request): string
+    {
+        $secret = (string) getenv('FLASHPI_WEBHOOK_SECRET');
+        $event = Flashpi::unwrapWebhook($request->getBody(), $request->getHeaders(), $secret);
+        $flashpi = new Flashpi();
+        $flashpi->webhooks->verifySignature((string) file_get_contents('php://input'), getallheaders(), $secret);
+
+        return $event['id'];
     }
 }

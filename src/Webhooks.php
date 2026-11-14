@@ -17,7 +17,7 @@ use Flashpi\Types\SdkTypes;
  * `webhook-signature` header lists several signatures.
  *
  * ```php
- * $event = $flashpi->webhooks->unwrap($rawBody, getallheaders(), $_ENV['FLASHPI_WEBHOOK_SECRET']);
+ * $event = $flashpi->webhooks->unwrap($rawBody, getallheaders(), (string) getenv('FLASHPI_WEBHOOK_SECRET'));
  * if ($event['type'] === 'webhook_endpoint.verification') {
  *     echo json_encode(['challenge' => $event['data']['challenge']]);
  * }
@@ -48,8 +48,10 @@ final class Webhooks
      * a body decoded and encoded again does not match.
      *
      * @param string|\Stringable $payload The raw body.
-     * @param WebhookHeaders $headers The request headers, names in any letter case; a header may
-     *                                come as a list of values (PSR-7, Symfony).
+     * @param WebhookHeaders $headers The request headers, names in any letter case, each value
+     *                                a string or a list of strings: an array,
+     *                                getallheaders(), PSR-7's getHeaders(), Symfony's
+     *                                HeaderBag, a generator. Read once.
      * @param string $secret The endpoint's signing secret (`whsec_...`).
      * @param int|float|null $tolerance Largest gap, in seconds, between `webhook-timestamp` and
      *                                  now (default 300).

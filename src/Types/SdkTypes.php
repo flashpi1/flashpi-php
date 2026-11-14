@@ -16,6 +16,10 @@ use Psr\Http\Message\StreamInterface;
  *   (`file_get_contents('firma.p12')`), a stream opened for reading (`fopen('firma.p12', 'rb')`)
  *   or a PSR-7 stream, read once from where it stands. `password` is sent to Flashpi only, never
  *   stored in plain text. `filename` is the name sent with it (default `certificate.p12`).
+ * - `WebhookHeaders`: the headers of a webhook request, any iterable of header names to values
+ *   or lists of values, as servers hand them over: an array, PSR-7's `getHeaders()`,
+ *   `getallheaders()`, Symfony's `HeaderBag`, a generator. Entries that are not strings are
+ *   skipped.
  * - `DocumentXml`: the XML of a document (`xml`) and which stage it comes from (`kind`):
  *   `authorized` (the SRI's authorization with the document inside, the valid tax document),
  *   `signed` (sent, not yet authorized) or `unsigned` (before signing); null when the API did not
@@ -59,7 +63,7 @@ use Psr\Http\Message\StreamInterface;
  * @phpstan-type ThinEvent EventThin
  * @phpstan-type WebhookEvent Event|WebhookEndpointVerificationEvent
  * @phpstan-type ThinWebhookEvent EventThin|WebhookEndpointVerificationEvent
- * @phpstan-type WebhookHeaders iterable<string, string|iterable<string|null>|null>
+ * @phpstan-type WebhookHeaders iterable<mixed, mixed>
  * @phpstan-type DocumentListParams DocumentsListQuery
  * @phpstan-type EventListParams EventsListQuery
  * @phpstan-type WebhookDeliveryListParams WebhookEndpointsDeliveriesListQuery

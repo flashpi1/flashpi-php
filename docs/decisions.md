@@ -183,10 +183,13 @@ and are listed so they can be confirmed or changed before 1.0.
   string (or a `Stringable`, such as a PSR-7 body) is `invalid_payload`, and a secret that is not
   a string (`getenv()` returning false) is `invalid_secret`, rather than a `\TypeError`, so a
   receiver answers 400. The secret is trimmed as the Node SDK's `trim()` trims it (Unicode
-  spaces and the byte order mark; Python's `strip()` keeps the mark). Headers are any iterable (arrays, PSR-7's `getHeaders()`, Symfony's
-  `HeaderBag`, a generator), read once; `now` is a date or Unix seconds. A `Stringable` payload
-  is read once too: `unwrap()` decodes the bytes it verified, so a PSR-7 body that cannot seek
-  works, and one that would read otherwise a second time cannot slip in unverified JSON.
+  spaces and the byte order mark; Python's `strip()` keeps the mark). Headers are any iterable
+  (arrays, `getallheaders()`, PSR-7's `getHeaders()`, Symfony's `HeaderBag`, a generator), read
+  once, and typed `iterable<mixed, mixed>` (`WebhookHeaders`) so that PHPStan at level max
+  accepts what servers hand over; entries that are not strings are skipped. `now` is a date or
+  Unix seconds. A `Stringable` payload is read once too: `unwrap()` decodes the bytes it
+  verified, so a PSR-7 body that cannot seek works, and one that would read otherwise a second
+  time cannot slip in unverified JSON.
 - **Secrets.** The API key lives in a `\SensitiveParameterValue` inside the client's
   configuration, and a certificate upload's parts in one inside its multipart body. It shows
   nothing of what it holds, so `var_dump()`, `print_r()`, `var_export()`, a cast to array

@@ -453,7 +453,7 @@ final class WebhooksTest extends TestCase
     private static function reason(mixed $payload, iterable $headers, mixed $secret, int|float|null $tolerance = null, \DateTimeInterface|int|float|null $now = null): string
     {
         try {
-            (new Webhooks())->verifySignature($payload, $headers, $secret, $tolerance, $now); // @phpstan-ignore argument.type, argument.type, argument.type
+            (new Webhooks())->verifySignature($payload, $headers, $secret, $tolerance, $now); // @phpstan-ignore argument.type, argument.type
 
             return 'verified';
         } catch (WebhookVerificationException $error) {
