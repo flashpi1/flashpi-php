@@ -492,13 +492,27 @@ final class ClientTest extends TestCase
         self::assertSame(['application/xml, application/problem+json', 'application/pdf, application/problem+json'], $api->headers('accept'));
     }
 
-    public function testReturnsNullForAnEmptyOrNoContentAnswer(): void
+    public function testReturnsNullForADeleteAndRefusesAJsonAnswerWithoutAnObject(): void
     {
-        $api = self::api([new Response(204), new Response(200), new Response(202), new Response(200, [], '{"ignored":true}')]);
+        $api = self::api([new Response(204), new Response(200, [], '{"ignored":true}')]);
         self::assertNull($api->things->delete(Replies::ID));
-        self::assertNull($api->things->get(Replies::ID));
-        self::assertNull($api->things->create([]));
         self::assertNull($api->things->delete(Replies::ID));
+
+        // The resources return arrays: an answer without one is the SDK's error, not a TypeError.
+        $answers = [new Response(200), new Response(202), new Response(204), Replies::json(null), Replies::json('x'), Replies::json(1)];
+        $api = self::api($answers, ['maxRetries' => 0]);
+        foreach ($answers as $index => $answer) {
+            self::throws(FlashpiException::class, static fn() => $index % 2 === 0 ? $api->things->get(Replies::ID) : $api->things->create([]), '/^The API answered without a JSON object$/');
+        }
+        self::assertCount(\count($answers), $api->sent);
+    }
+
+    public function testRefusesAJsonAnswerWithoutAnObjectOnTheRealResources(): void
+    {
+        $api = self::api([new Response(200), Replies::json(null), Replies::json('x')], ['maxRetries' => 0]);
+        self::throws(FlashpiException::class, static fn() => $api->client->documents->get(Replies::ID), '/without a JSON object/');
+        self::throws(FlashpiException::class, static fn() => $api->client->status->get(), '/without a JSON object/');
+        self::throws(FlashpiException::class, static fn() => $api->client->issuers->withResponse()->get(Replies::ID), '/without a JSON object/');
     }
 
     public function testSendsAMultipartBodyBuiltAgainForEveryAttempt(): void

@@ -75,11 +75,20 @@ abstract class Resource
     /**
      * Sends the request (with its retries) and returns its data.
      *
+     * The data of a JSON operation is an array, as the resources' return types say: a successful
+     * answer without one (empty, `null`, a string: a misbehaving proxy) throws a
+     * FlashpiException rather than a \TypeError.
+     *
      * @throws FlashpiException
      */
     final protected function send(RequestSpec $spec): mixed
     {
-        return $this->sendForResponse($spec)->data;
+        $data = $this->sendForResponse($spec)->data;
+        if ($spec->responseType === 'json' && !\is_array($data)) {
+            throw new FlashpiException('The API answered without a JSON object');
+        }
+
+        return $data;
     }
 
     /**
