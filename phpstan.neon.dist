@@ -1,0 +1,43 @@
+# PHPStan at the highest level over the library, its tests and its scripts.
+#
+# Besides `level: max`:
+# - bleedingEdge makes array shapes sealed: an array with a key the shape does not declare (a typo
+#   in a request body) is an error, as a TypedDict or a TypeScript object literal would be. The
+#   consumer files in tests/Types/ rely on it.
+# - treatPhpDocTypesAsCertain is off: the SDK checks at run time what callers pass (options,
+#   headers, webhook payloads) even where its PHPDoc already narrows the type, since PHP does not
+#   enforce PHPDoc types.
+# - The other flags turn on checks that `max` leaves off: uninitialized properties, benevolent
+#   unions (`array-key`), callables without a signature, possibly missing array offsets, @var tags
+#   that lie or widen a type, and conditions that are always true.
+includes:
+  - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+  level: max
+  paths:
+    - src
+    - tests
+    - scripts
+  excludePaths:
+    # Code that must fail analysis: tests/Types/ConsumerTypesTest.php checks its errors.
+    - tests/Types/Fixtures/Invalid
+    # The README examples: tests/Types/ConsumerTypesTest.php analyses them with a consumer's
+    # configuration and the stubs of the frameworks they use.
+    - tests/Examples/Readme/en_*.php
+    - tests/Examples/Readme/es_*.php
+  tmpDir: .phpstan.cache
+  # PHPUnit builds a test's state in setUp(), not in its constructor.
+  additionalConstructors:
+    - PHPUnit\Framework\TestCase::setUp
+  treatPhpDocTypesAsCertain: false
+  checkUninitializedProperties: true
+  checkBenevolentUnionTypes: true
+  checkMissingCallableSignature: true
+  checkTooWideReturnTypesInProtectedAndPublicMethods: true
+  checkDynamicProperties: true
+  reportAlwaysTrueInLastCondition: true
+  reportAnyTypeWideningInVarTag: true
+  reportPossiblyNonexistentConstantArrayOffset: true
+  reportPossiblyNonexistentGeneralArrayOffset: true
+  reportWrongPhpDocTypeInVarTag: true

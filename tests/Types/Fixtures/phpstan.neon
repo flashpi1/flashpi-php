@@ -1,0 +1,22 @@
+# A consumer's PHPStan configuration: level max with bleeding edge (as the README advises), and
+# none of the repository's own flags (phpstan.neon.dist), which change what a consumer sees.
+# tests/Types/ConsumerTypesTest.php runs it over the consumer files and the README examples,
+# which must pass, and the misuse files, which must fail exactly where expected.
+includes:
+  - ../../../vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+  level: max
+  paths:
+    - ClientConsumer.php
+    - ResourcesConsumer.php
+    - TypesConsumer.php
+    - Invalid/TypesMisuse.php
+    - Invalid/ResourcesMisuse.php
+    - ../../Examples/Readme
+  scanDirectories:
+    - ../../../src
+  scanFiles:
+    - ../../Examples/stubs/frameworks.stub
+    - ../../Examples/stubs/reader.stub
+  tmpDir: ../../../.phpstan.cache/consumer
