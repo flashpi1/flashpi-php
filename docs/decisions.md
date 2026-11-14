@@ -135,15 +135,16 @@ The owner confirmed every one of them on 2026-11-14.
   one and anything else a `FlashpiException`, each with the original's class and message and no
   previous exception. Node wraps every failure of `fetch()` the same way; Python lets other
   errors through, but httpx's request hides the key. A caller's client that throws for error
-  statuses (`BadResponseException`) gets its response read as the API's answer. An answer cut
-  short is a retried `ConnectionException` too with curl and Guzzle 8's stream handler, which fail
-  the transfer (httpx and Node raise a network error there). Guzzle 7's stream handler returns
-  what arrived: the SDK compares a body framed by `Content-Length` with it itself, but it cannot
-  tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and Guzzle 8's
-  stream handler notices it only from 8.3.0 on) or a compressed answer cut short (Guzzle 7
-  inflates what arrived and drops the `Content-Length`), which are returned as they arrived.
-  The API frames its answers with `Content-Length` and the SDK sends no `Accept-Encoding`, so
-  this needs an intermediary that re-frames or compresses them, or a caller that asks for
+  statuses (`BadResponseException`) gets its response read as the API's answer. An answer cut short
+  is a retried `ConnectionException` too with curl and with Guzzle 8's stream handler, which fail
+  the transfer (httpx and Node raise a network error there); before 8.3.0, though, Guzzle 8's
+  stream handler misses a chunked answer cut before its last chunk, as below. Guzzle 7's stream
+  handler returns what arrived: the SDK compares a body framed by `Content-Length` with it itself,
+  but it cannot tell a chunked answer cut before its last chunk (PHP's http wrapper hides it, and
+  Guzzle 8's stream handler notices it only from 8.3.0 on) or a compressed answer cut short
+  (Guzzle 7 inflates what arrived and drops the `Content-Length`), which are returned as they
+  arrived. The API frames its answers with `Content-Length` and the SDK sends no `Accept-Encoding`,
+  so this needs an intermediary that re-frames or compresses them, or a caller that asks for
   compression; `tests/DeadlineTest.php` pins it.
 - **The deadline of an attempt.** Guzzle's `timeout` and `connect_timeout` are the attempt's
   timeout (at least one millisecond, Guzzle 8's floor), and `read_timeout` is that timeout rounded
