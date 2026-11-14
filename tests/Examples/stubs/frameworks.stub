@@ -1,0 +1,89 @@
+<?php
+
+// The bits of Laravel and Symfony the README examples use, for PHPStan
+// (tests/Types/Fixtures/phpstan.neon): neither framework is a dependency of the SDK.
+
+namespace Symfony\Component\HttpFoundation {
+    /**
+     * @implements \IteratorAggregate<string, list<string|null>>
+     */
+    class HeaderBag implements \IteratorAggregate
+    {
+        /**
+         * @return \ArrayIterator<string, list<string|null>>
+         */
+        public function getIterator(): \ArrayIterator {}
+    }
+
+    class Request
+    {
+        public HeaderBag $headers;
+
+        /**
+         * @return ($asResource is true ? resource : string)
+         */
+        public function getContent(bool $asResource = false) {}
+    }
+
+    class Response
+    {
+        /**
+         * @param array<string, string|list<string>> $headers
+         */
+        public function __construct(?string $content = '', int $status = 200, array $headers = []) {}
+    }
+
+    class JsonResponse extends Response
+    {
+        /**
+         * @param array<string, string|list<string>> $headers
+         */
+        public function __construct(mixed $data = null, int $status = 200, array $headers = [], bool $json = false) {}
+    }
+}
+
+namespace Symfony\Component\Routing\Attribute {
+    #[\Attribute(\Attribute::IS_REPEATABLE | \Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD)]
+    class Route
+    {
+        /**
+         * @param string|list<string> $methods
+         */
+        public function __construct(?string $path = null, ?string $name = null, string|array $methods = []) {}
+    }
+}
+
+namespace Symfony\Component\DependencyInjection\Attribute {
+    #[\Attribute(\Attribute::TARGET_PARAMETER)]
+    class Autowire
+    {
+        public function __construct(mixed $value = null, ?string $service = null, ?string $expression = null, ?string $env = null, ?string $param = null) {}
+    }
+}
+
+namespace Illuminate\Http {
+    class Request extends \Symfony\Component\HttpFoundation\Request {}
+
+    class Response extends \Symfony\Component\HttpFoundation\Response
+    {
+        /**
+         * @param array<string, string|list<string>> $headers
+         */
+        public function __construct(mixed $content = '', int $status = 200, array $headers = []) {}
+    }
+
+    class JsonResponse extends \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        /**
+         * @param array<string, string|list<string>> $headers
+         */
+        public function __construct(mixed $data = null, int $status = 200, array $headers = [], int $options = 0, bool $json = false) {}
+    }
+}
+
+namespace Illuminate\Support\Facades {
+    class Config
+    {
+        public static function string(string $key, ?string $default = null): string {}
+    }
+}

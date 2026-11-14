@@ -1,0 +1,24 @@
+<?php
+
+// The reader's own code the README examples call, for PHPStan (tests/Types/Fixtures/phpstan.neon).
+
+use Flashpi\Types\ApiTypes;
+use Flashpi\Types\SdkTypes;
+
+/**
+ * The reader's retry queue.
+ *
+ * @phpstan-import-type CreateInvoice from ApiTypes
+ *
+ * @param CreateInvoice $body
+ */
+function saveForRetry(array $body, string $idempotencyKey): void {}
+
+/**
+ * The reader's handling of a webhook event, like the branches of the plain PHP example.
+ *
+ * @phpstan-import-type WebhookEvent from SdkTypes
+ *
+ * @param WebhookEvent $event
+ */
+function handleEvent(array $event): void {}

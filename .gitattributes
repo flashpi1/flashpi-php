@@ -5,6 +5,9 @@
 openapi/openapi.json linguist-generated
 # Generated from that copy (`composer openapi:generate`).
 src/Types/ApiTypes.php linguist-generated
+# The README examples, extracted from the READMEs (`composer readme:generate`).
+tests/Examples/Readme/en_*.php linguist-generated
+tests/Examples/Readme/es_*.php linguist-generated
 
 # Composer installs the package from GitHub's archive of a tag: keep everything that is not the
 # library out of it.

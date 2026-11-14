@@ -184,6 +184,15 @@ and are listed so they can be confirmed or changed before 1.0.
   configuration (`tests/Types/Fixtures/phpstan.neon`: level max and bleeding edge only), since
   the repository's own flags (`treatPhpDocTypesAsCertain: false` among them) hide errors a reader
   would get.
+- **README examples.** As in Python, every `php` block of both READMEs is checked:
+  `scripts/readme.php` (PHP alone, `composer readme:generate|check`) writes each one to
+  `tests/Examples/Readme/{es,en}_NN.php`, in a namespace of its own, with the variables it reads
+  before setting them (`$flashpi`, `$invoice`, `$body`, ...) taken from
+  `tests/Examples/Readme/Context.php`. PHPStan analyses them with the consumer's configuration of
+  `tests/Types/ConsumerTypesTest.php`, with stubs of the bits of Laravel and Symfony they use
+  (`tests/Examples/stubs/`, neither framework is a dependency), and PHP-CS-Fixer checks their
+  style. The webhook examples are plain PHP, Laravel and Symfony, Python's Django, Flask and
+  FastAPI.
 - **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
   `composer test:live` runs it. The Python suite's async-client cases run on the one client.
 - **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue
@@ -224,6 +233,6 @@ and are listed so they can be confirmed or changed before 1.0.
   `FieldErrorCode` accepts any string (Python opens them in hand-written types only). PHPDoc
   aliases carry no description per member. PHPStan 2 seals array shapes only with its bleeding
   edge configuration: without it, a misspelled optional key is not reported. This repository
-  enables it; the README should tell consumers.
+  enables it, and the READMEs' "Static analysis" section tells consumers to.
 - **Coverage.** pcov only measures `src/` unless told otherwise: CI must pass
   `-d pcov.directory=.` for the scripts to count.

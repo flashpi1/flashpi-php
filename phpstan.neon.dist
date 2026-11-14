@@ -22,6 +22,10 @@ parameters:
   excludePaths:
     # Code that must fail analysis: tests/Types/ConsumerTypesTest.php checks its errors.
     - tests/Types/Fixtures/Invalid
+    # The README examples: tests/Types/ConsumerTypesTest.php analyses them with a consumer's
+    # configuration and the stubs of the frameworks they use.
+    - tests/Examples/Readme/en_*.php
+    - tests/Examples/Readme/es_*.php
   tmpDir: .phpstan.cache
   # PHPUnit builds a test's state in setUp(), not in its constructor.
   additionalConstructors:

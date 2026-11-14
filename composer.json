@@ -65,6 +65,8 @@
     "openapi:check": "@php scripts/openapi.php check",
     "openapi:generate": "@php scripts/openapi.php generate",
     "openapi:sync": "@php scripts/openapi.php sync",
+    "readme:check": "@php scripts/readme.php check",
+    "readme:generate": "@php scripts/readme.php generate",
     "test": "phpunit",
     "test:live": "phpunit --group live"
   },
@@ -75,6 +77,8 @@
     "openapi:check": "Fails when src/Types/ApiTypes.php does not match openapi/openapi.json.",
     "openapi:generate": "Regenerates src/Types/ApiTypes.php from openapi/openapi.json.",
     "openapi:sync": "Downloads the public OpenAPI document, then regenerates the types.",
+    "readme:check": "Fails when tests/Examples/Readme does not match the READMEs.",
+    "readme:generate": "Rewrites tests/Examples/Readme from the php blocks of the READMEs.",
     "test": "Runs the tests.",
     "test:live": "Runs tests/Live against the real API in test mode (needs FLASHPI_TEST_API_KEY and FLASHPI_DEMO_ISSUER_ID)."
   }
