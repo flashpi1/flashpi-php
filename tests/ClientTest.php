@@ -486,12 +486,24 @@ final class ClientTest extends TestCase
     public function testRejectsEmptyPathIdsBeforeSendingAnything(): void
     {
         $api = self::api();
-        foreach (['', '  ', "\n"] as $value) {
+        foreach (['', '  ', "\n", "\0", "\f", "\u{A0}", "\u{FEFF}", " \u{3000}\t"] as $value) {
             self::throws(FlashpiException::class, static fn() => $api->things->get($value), '/^Missing id in \/v1\/things\/\{id\}: got /');
         }
         self::throws(FlashpiException::class, static fn() => $api->things->getNested(Replies::ID, ''), "/^Missing id in \\/v1\\/things\\/\\{id\\}\\/parts\\/\\{id\\}: got ''$/");
         self::throws(\TypeError::class, static fn() => $api->things->get(null)); // @phpstan-ignore argument.type
         self::assertSame([], $api->sent);
+    }
+
+    public function testSendsIdsWithSpacesInsideOrBytesThatAreNotUtf8(): void
+    {
+        $api = self::api([Replies::json([]), Replies::json([]), Replies::json([])]);
+        $api->things->get(" a\u{A0}");
+        $api->things->get("\xFF");
+        $api->things->get("\u{200B}");
+        self::assertSame(['/v1/things/%20a%C2%A0', '/v1/things/%FF', '/v1/things/%E2%80%8B'], array_map(
+            static fn($request): string => $request->getUri()->getPath(),
+            $api->sent,
+        ));
     }
 
     public function testEncodesPathIdsLikeEncodeUriComponent(): void

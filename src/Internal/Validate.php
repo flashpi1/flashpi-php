@@ -187,6 +187,15 @@ final class Validate
     }
 
     /**
+     * Whether a string is empty once trimmed as JavaScript's `trim()` trims it (NUL counts as
+     * blank too). A string that is not UTF-8 is not blank.
+     */
+    public static function isBlank(string $value): bool
+    {
+        return preg_match('/\A(?:' . self::JS_SPACE . '|\x00)*\z/u', $value) === 1;
+    }
+
+    /**
      * A string as PHP code would quote it, with control characters escaped: for messages.
      */
     public static function quote(string $value): string

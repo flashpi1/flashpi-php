@@ -116,7 +116,8 @@ and are listed so they can be confirmed or changed before 1.0.
 - **Queries and paths.** Null values are left out, booleans are sent as `true` and `false`,
   numbers and `Stringable` values as text, and anything else is refused; the encoding is
   Python's `urlencode()` (a space as `+`). Path ids are encoded as `encodeURIComponent()` does;
-  empty or blank ids, `.` and `..` are refused.
+  ids that JavaScript's `trim()` leaves empty (spaces, line breaks, a form feed, a no-break
+  space, a byte order mark), as in Node, and `.` and `..` are refused before anything is sent.
 - **withResponse().** Each resource's `withResponse()` returns a view
   (`$flashpi->documents->withResponse()->get($id)`) whose methods are declared with `@method`
   tags: it runs the resource's method and returns an `ApiResponse` with its data, the PSR-7

@@ -19,8 +19,9 @@ final class Path
      * A path from a template with `{}` placeholders, each id percent-encoded as JavaScript's
      * encodeURIComponent() does: `Path::of('/v1/issuers/{}', $issuerId)`.
      *
-     * Refuses empty ids, and `.` and `..`, which URL normalization would turn into the parent path
-     * (another resource).
+     * Refuses empty ids and ids JavaScript's `trim()` leaves empty (spaces, line breaks, a
+     * no-break space, a byte order mark), as the Node SDK does, and `.` and `..`, which URL
+     * normalization would turn into the parent path (another resource).
      *
      * @throws FlashpiException
      * @throws \InvalidArgumentException When the ids do not match the placeholders.
@@ -34,7 +35,7 @@ final class Path
         $shown = str_replace('{}', '{id}', $template);
         $path = $parts[0];
         foreach (array_values($ids) as $index => $id) {
-            if (trim($id, " \t\n\r\0\x0B") === '') {
+            if (Validate::isBlank($id)) {
                 throw new FlashpiException("Missing id in {$shown}: got " . Validate::quote($id));
             }
             if ($id === '.' || $id === '..') {

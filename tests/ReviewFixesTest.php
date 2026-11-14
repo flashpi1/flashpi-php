@@ -423,6 +423,9 @@ final class ReviewFixesTest extends TestCase
         $api = self::api();
         self::throws(FlashpiException::class, static fn() => $api->op('issuers.get', ''), "/^Missing id in \\/v1\\/issuers\\/\\{id\\}: got ''$/");
         self::throws(FlashpiException::class, static fn() => $api->op('issuers.establishments.emissionPoints.list', Replies::ID, ' '), '/\\/establishments\\/\\{id\\}\\/emission-points/');
+        foreach (["\f", "\u{A0}", "\u{FEFF}"] as $value) {
+            self::throws(FlashpiException::class, static fn() => $api->op('documents.get', $value), '/^Missing id in \\/v1\\/documents\\/\\{id\\}: got /');
+        }
         self::assertSame([], $api->sent);
     }
 
