@@ -369,6 +369,11 @@ final class Engine
      * network failure, retried like one. A body the handler decoded (gzip) carries no
      * Content-Length of its own, so it is not compared.
      *
+     * Guzzle 7's stream handler also returns, as they arrived, a chunked answer cut before its
+     * last chunk (PHP's http wrapper hides it) and a compressed answer cut short: nothing here
+     * can tell. The API frames its answers with Content-Length, so that needs an intermediary
+     * that re-frames them; ext-curl or Guzzle 8 report it as a ConnectionException.
+     *
      * @throws ConnectionException
      */
     private static function checkLength(ResponseInterface $response, string $content, RequestSpec $spec, Call $call): void

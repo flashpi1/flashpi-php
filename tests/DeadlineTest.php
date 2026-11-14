@@ -198,6 +198,36 @@ final class DeadlineTest extends TestCase
     }
 
     #[Group('network')]
+    public function testACutChunkedOrCompressedAnswerFailsExceptOnGuzzle7sStreamHandler(): void
+    {
+        $guzzle7 = !class_exists('GuzzleHttp\\Exception\\ConnectTimeoutException');
+        foreach (['stream' => new StreamHandler(), 'default' => null] as $label => $handler) {
+            $http = new Client(['handler' => HandlerStack::create($handler)]);
+            $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::rawUrl(), timeout: 5.0, maxRetries: 0, httpClient: $http);
+            $pdf = self::bytes($client, '/pdf');
+            self::assertGreaterThan(1000, \strlen($pdf));
+            foreach (['/chunk-cut', '/gzip-cut'] as $path) {
+                if ($guzzle7 && $label === 'stream') {
+                    // PHP's http wrapper hides that the chunked answer ended before its last chunk,
+                    // and Guzzle 7 inflates what arrived without a Content-Length to compare, so
+                    // the SDK cannot tell (docs/decisions.md, "Transfer failures"). Pinned here so
+                    // a change of Guzzle 7 is seen.
+                    $cut = self::bytes($client, $path);
+                    self::assertNotSame('', $cut, "{$label} {$path}");
+                    self::assertLessThan(\strlen($pdf), \strlen($cut), "{$label} {$path}");
+                    self::assertSame(substr($pdf, 0, \strlen($cut)), $cut, "{$label} {$path}");
+
+                    continue;
+                }
+                // curl, and Guzzle 8's stream handler, fail the transfer: a retried network error.
+                $error = self::throws(ConnectionException::class, static fn() => self::bytes($client, $path));
+                self::assertNotInstanceOf(TimeoutException::class, $error, "{$label} {$path}");
+                self::assertStringStartsWith('GET ' . LocalServer::rawUrl() . "{$path} failed: ", $error->getMessage(), "{$label} {$path}");
+            }
+        }
+    }
+
+    #[Group('network')]
     public function testSendsTheRequestAndNeverFollowsARedirect(): void
     {
         $client = new Flashpi(Replies::TEST_KEY, baseUrl: LocalServer::url(), maxRetries: 0);
@@ -241,6 +271,18 @@ final class DeadlineTest extends TestCase
     private static function trickle(Flashpi $client, float $delay): mixed
     {
         return self::get($client, "/trickle?delay={$delay}");
+    }
+
+    /**
+     * The bytes a GET of a path of the local server answers, through the client's engine.
+     */
+    private static function bytes(Flashpi $client, string $path): string
+    {
+        $spec = new \Flashpi\Internal\RequestSpec('GET', $path, accept: 'application/pdf', responseType: 'bytes');
+        $data = MockApi::engine($client)->request($spec)->data;
+        self::assertIsString($data);
+
+        return $data;
     }
 
     /**

@@ -35,7 +35,7 @@
     "guzzlehttp/psr7": "<2.6.3"
   },
   "suggest": {
-    "ext-curl": "Enforces each attempt's deadline over the whole answer, headers included"
+    "ext-curl": "Enforces each attempt's deadline over the whole answer, headers included, and notices an answer cut short"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.95",
