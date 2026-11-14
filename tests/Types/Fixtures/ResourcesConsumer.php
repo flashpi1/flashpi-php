@@ -275,9 +275,7 @@ final class ResourcesConsumer
         }
         $event = $flashpi->events->get('evt_1');
         $status = $flashpi->status->get(['language' => 'es']);
-        if ($status['status'] === 'operational') {
-            echo 'up';
-        }
+        echo $status['status'];
 
         return [$event, $status, $flashpi->status->withResponse()->get(), $types];
     }

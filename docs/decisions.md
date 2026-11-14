@@ -170,7 +170,10 @@ and are listed so they can be confirmed or changed before 1.0.
   filters, bodies and answers, that each view declares the same methods, and that each method
   sends its operation. `tests/Types/Fixtures/ResourcesConsumer.php` uses every resource as the
   README does and passes PHPStan at level max; `Invalid/ResourcesMisuse.php` holds the mistakes
-  PHPStan must report.
+  PHPStan must report. `tests/Types/ConsumerTypesTest.php` analyses both with a consumer's
+  configuration (`tests/Types/Fixtures/phpstan.neon`: level max and bleeding edge only), since
+  the repository's own flags (`treatPhpDocTypesAsCertain: false` among them) hide errors a reader
+  would get.
 - **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
   `composer test:live` runs it. The Python suite's async-client cases run on the one client.
 - **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue

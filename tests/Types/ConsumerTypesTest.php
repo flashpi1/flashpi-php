@@ -12,6 +12,10 @@ use PHPUnit\Framework\TestCase;
  * shapes are sealed) reports a misspelled key, a value outside an enum, a missing required key and
  * a value of the wrong type, in the request bodies, the options, the filters and the models, and
  * a resource method called with the wrong arguments or whose answer is misread.
+ *
+ * It runs with a consumer's configuration (Fixtures/phpstan.neon), not the repository's, so the
+ * consumer files must pass as a reader's own code would, and nothing but the expected mistakes
+ * may be reported.
  */
 #[Group('phpstan')]
 final class ConsumerTypesTest extends TestCase
@@ -76,7 +80,7 @@ final class ConsumerTypesTest extends TestCase
     {
         $command = escapeshellarg(\PHP_BINARY) . ' ' . escapeshellarg(self::ROOT . '/vendor/bin/phpstan')
             . ' analyse --error-format=json --no-progress --memory-limit=1G -c '
-            . escapeshellarg(__DIR__ . '/Fixtures/Invalid/phpstan.neon') . ' 2>/dev/null';
+            . escapeshellarg(__DIR__ . '/Fixtures/phpstan.neon') . ' 2>/dev/null';
         $output = shell_exec($command);
         self::assertIsString($output);
         $result = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
