@@ -233,8 +233,9 @@ and are listed so they can be confirmed or changed before 1.0.
   edge configuration: without it, a misspelled optional key is not reported. This repository
   enables it, and the READMEs' "Static analysis" section tells consumers to.
 - **Coverage.** pcov only measures `src/` unless told otherwise: CI passes
-  `-d pcov.directory=.` for the scripts to count, and fails below 95 % of lines, as Python's
-  `fail_under`.
+  `-d pcov.directory=.` for the scripts' classes to count, and fails below 95 % of lines, as
+  Python's `fail_under`. The command-line entry points of `scripts/` only read their arguments
+  and call those classes: `phpunit.xml.dist` leaves them out, and CI runs them as steps.
 - **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate
   --strict`, the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the
   tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle

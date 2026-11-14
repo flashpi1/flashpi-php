@@ -40,11 +40,21 @@
     </exclude>
   </groups>
 
+  <!--
+    Coverage counts the library and the scripts' classes. The command-line entry points only read
+    their arguments and call those classes; CI runs them as steps of their own.
+  -->
   <source ignoreIndirectDeprecations="true">
     <include>
       <directory>src</directory>
       <directory>scripts</directory>
     </include>
+    <exclude>
+      <file>scripts/installed_check.php</file>
+      <file>scripts/openapi.php</file>
+      <file>scripts/package_check.php</file>
+      <file>scripts/readme.php</file>
+    </exclude>
   </source>
 
   <php>
