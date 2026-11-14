@@ -6,7 +6,8 @@ before changing them.
 
 ## Setup
 
-PHP 8.2 or later with the curl, mbstring and phar extensions, and [Composer](https://getcomposer.org/):
+PHP 8.2 or later with the curl, mbstring and phar extensions, and
+[Composer](https://getcomposer.org/):
 
 ```bash
 composer install

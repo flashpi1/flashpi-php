@@ -45,7 +45,6 @@ and are listed so they can be confirmed or changed before 1.0.
   among them every Guzzle 7 before 7.15.2: the CI job of the lowest versions turns that off
   (`audit.block-insecure`) and prints the versions it tested. Whether to raise the constraint to
   `^7.15.2 || ^8.0.1` (Laravel 11 and 12 accept it) is the owner's call.
-
 - **Layout.** The client is `Flashpi\Flashpi`; next to it are `Page`, `ApiResponse`, `Webhooks`
   and `Version`. Exceptions are in `Flashpi\Exception`, types in `Flashpi\Types`, and the engine,
   the request specs and the bases of the resources in `Flashpi\Internal` (all `@internal`). Classes
@@ -117,18 +116,18 @@ and are listed so they can be confirmed or changed before 1.0.
   operation to the time left and has no such gap. `composer.json` suggests `ext-curl` for this;
   Guzzle stays the only dependency.
 - **Bodies and answers.** A JSON body is encoded once with `JSON_UNESCAPED_SLASHES` and
-  `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; objects (`JsonSerializable`) are accepted.
-  PHP has one empty array for an empty list and an empty object, so an empty array, at any depth,
-  is sent as `[]` under the names the contract types as lists (`items`, `payments`, `taxes`, ...:
-  `Engine::LIST_FIELDS`, checked against `openapi/openapi.json` by `tests/OperationsTest.php`)
-  and as `{}` anywhere else (the body itself, `additionalInfo`, `options`, `branding`, ...). The
-  API then answers an empty list as Python's SDK gets it answered (too short), and an empty
-  object is valid. Answers are
-  decoded into associative arrays, invalid UTF-8 replaced; a successful JSON answer without an
-  array (empty, `null`, a string: a misbehaving proxy) throws a `FlashpiException`, where the
-  native `: array` return type would throw a `\TypeError` (Python returns what it got). Text and bytes answers (XML, PDF) are
-  the body as it came: PHP strings are bytes. The PSR-7 response an `ApiResponse` holds has its
-  body rewound into a new stream, so it can be read again.
+  `JSON_UNESCAPED_UNICODE`, like `JSON.stringify()`; objects (`JsonSerializable`) are accepted. PHP
+  has one empty array for an empty list and an empty object, so an empty array, at any depth, is
+  sent as `[]` under the names the contract types as lists (`items`, `payments`, `taxes`, ...:
+  `Engine::LIST_FIELDS`, checked against `openapi/openapi.json` by `tests/OperationsTest.php`) and
+  as `{}` anywhere else (the body itself, `additionalInfo`, `options`, `branding`, ...). The API
+  then answers an empty list as Python's SDK gets it answered (too short), and an empty object is
+  valid. Answers are decoded into associative arrays, invalid UTF-8 replaced; a successful JSON
+  answer without an array (empty, `null`, a string: a misbehaving proxy) throws a
+  `FlashpiException`, where the native `: array` return type would throw a `\TypeError` (Python
+  returns what it got). Text and bytes answers (XML, PDF) are the body as it came: PHP strings are
+  bytes. The PSR-7 response an `ApiResponse` holds has its body rewound into a new stream, so it can
+  be read again.
 - **Queries and paths.** Null values are left out, booleans are sent as `true` and `false`,
   numbers and `Stringable` values as text, and anything else is refused; the encoding is
   Python's `urlencode()` (a space as `+`). Path ids are encoded as `encodeURIComponent()` does;
@@ -191,40 +190,39 @@ and are listed so they can be confirmed or changed before 1.0.
   `tests/Examples/Readme/Context.php`. PHPStan analyses them with the consumer's configuration of
   `tests/Types/ConsumerTypesTest.php`, with stubs of the bits of Laravel and Symfony they use
   (`tests/Examples/stubs/`, neither framework is a dependency), and PHP-CS-Fixer checks their
-  style. The webhook examples are plain PHP, Laravel and Symfony, Python's Django, Flask and
-  FastAPI.
+  style. The webhook examples are for plain PHP, Laravel and Symfony, where Python's are for
+  Django, Flask and FastAPI.
 - **Live tests.** `tests/Live` is the PHPUnit group `live`, which `phpunit.xml.dist` leaves out;
   `composer test:live` runs it. The Python suite's async-client cases run on the one client.
 - **Pages.** `list()` returns a `Page`: `foreach` walks every item across pages (keys continue
   from page to page), and `data`, `hasMore`, `nextCursor`, `hasNextPage()` and `nextPage()` move
   one page at a time. Walking a page twice fetches the following pages again.
-- **Webhooks.** `Webhooks` has `unwrap()` and `verifySignature()` (also `$flashpi->webhooks`),
-  and the client has the static `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`:
-  PHP cannot share one name between a static and an instance method, and calling a static method
-  on an instance is refused by PHPStan's strict rules. As in Python, a payload that is not a
-  string (or a `Stringable`, such as a PSR-7 body) is `invalid_payload`, and a secret that is not
-  a string (`getenv()` returning false) is `invalid_secret`, rather than a `\TypeError`, so a
-  receiver answers 400. The secret is trimmed as the Node SDK's `trim()` trims it (Unicode
-  spaces and the byte order mark; Python's `strip()` keeps the mark). Headers are any iterable
-  (arrays, `getallheaders()`, PSR-7's `getHeaders()`, Symfony's `HeaderBag`, a generator), read
-  once, and typed `iterable<mixed, mixed>` (`WebhookHeaders`) so that PHPStan at level max
-  accepts what servers hand over; entries that are not strings are skipped. With Guzzle 7,
-  psr7 2 installs a `getallheaders()` polyfill (ralouphie/getallheaders) without a return type,
-  which PHPStan reads as `mixed`: there, a caller at level max writes `(array) getallheaders()`,
-  and `tests/Types/ConsumerTypesTest.php` runs with Guzzle 8 only. `now` is a date or
-  Unix seconds. A `Stringable` payload is read once too: `unwrap()` decodes the bytes it
-  verified, so a PSR-7 body that cannot seek works, and one that would read otherwise a second
-  time cannot slip in unverified JSON.
-- **Secrets.** The API key lives in a `\SensitiveParameterValue` inside the client's
-  configuration, and a certificate upload's parts in one inside its multipart body. It shows
-  nothing of what it holds, so `var_dump()`, `print_r()`, `var_export()`, a cast to array
-  followed by any of them and Symfony's VarDumper (`dump()`, `dd()`, Laravel's Tinker) never
-  show them, and `serialize()` fails (serializing a client fails). A closure would not do: its
-  captured variables show in `var_dump()` of a cast and in VarDumper. `withResponse()` passes
-  the call's arguments through no closure either (see above). `__debugInfo()` shows only what is
-  safe, and every parameter that holds the key, a webhook
-  secret or its key, a .p12, its password, a Guzzle request or a Guzzle exception is marked
-  `#[\SensitiveParameter]`, so stack traces hide it. PHP's traces carry arguments, not local
+- **Webhooks.** `Webhooks` has `unwrap()` and `verifySignature()` (also `$flashpi->webhooks`), and
+  the client has the static `Flashpi::unwrapWebhook()` and `Flashpi::verifyWebhookSignature()`: PHP
+  cannot share one name between a static and an instance method, and calling a static method on an
+  instance is refused by PHPStan's strict rules. As in Python, a payload that is not a string (or a
+  `Stringable`, such as a PSR-7 body) is `invalid_payload`, and a secret that is not a string
+  (`getenv()` returning false) is `invalid_secret`, rather than a `\TypeError`, so a receiver
+  answers 400. The secret is trimmed as the Node SDK's `trim()` trims it (Unicode spaces and the
+  byte order mark; Python's `strip()` keeps the mark). Headers are any iterable (arrays,
+  `getallheaders()`, PSR-7's `getHeaders()`, Symfony's `HeaderBag`, a generator), read once, and
+  typed `iterable<mixed, mixed>` (`WebhookHeaders`) so that PHPStan at level max accepts what
+  servers hand over; entries that are not strings are skipped. With Guzzle 7, psr7 2 installs a
+  `getallheaders()` polyfill (ralouphie/getallheaders) without a return type, which PHPStan reads
+  as `mixed`: there, a caller at level max writes `(array) getallheaders()`, and
+  `tests/Types/ConsumerTypesTest.php` runs with Guzzle 8 only. `now` is a date or Unix seconds. A
+  `Stringable` payload is read once too: `unwrap()` decodes the bytes it verified, so a PSR-7 body
+  that cannot seek works, and one that would read otherwise a second time cannot slip in unverified
+  JSON.
+- **Secrets.** The API key lives in a `\SensitiveParameterValue` inside the client's configuration,
+  and a certificate upload's parts in one inside its multipart body. It shows nothing of what it
+  holds, so `var_dump()`, `print_r()`, `var_export()`, a cast to array followed by any of them and
+  Symfony's VarDumper (`dump()`, `dd()`, Laravel's Tinker) never show them, and `serialize()` fails
+  (serializing a client fails). A closure would not do: its captured variables show in `var_dump()`
+  of a cast and in VarDumper. `withResponse()` passes the call's arguments through no closure
+  either (see above). `__debugInfo()` shows only what is safe, and every parameter that holds the
+  key, a webhook secret or its key, a .p12, its password, a Guzzle request or a Guzzle exception is
+  marked `#[\SensitiveParameter]`, so stack traces hide it. PHP's traces carry arguments, not local
   variables, so the Python SDK's work on frame locals has no counterpart.
 - **Types.** A generator of our own (`scripts/openapi.php`, PHP alone) writes one class,
   `Flashpi\Types\ApiTypes`, with a `@phpstan-type` per schema and per list query, named as in
