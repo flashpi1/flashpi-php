@@ -64,7 +64,8 @@ The owner answered the questions the port left open and confirmed every other ch
 - **Models are arrays.** Associative arrays with the API's camelCase keys
   (`$document['accessKey']`), typed by PHPStan array shapes generated from the OpenAPI document,
   the counterpart of Python's TypedDicts. No hydrated model classes. One synchronous client, no
-  async. No Laravel integration here: a separate `flashpi/flashpi-laravel` comes later.
+  async. No Laravel integration here: it lives in the separate `flashpi/flashpi-laravel`
+  (0.1.0, released 2026-11-16), which the READMEs point to.
 - **Tooling.** PHPUnit 11; PHPStan at the highest level over the library, the tests, the scripts
   and a consumer file; PHP-CS-Fixer with the PER-CS 2.0 rule set.
 - **The Node and Python SDKs' design.** READMEs in Spanish (`README.md`) and English

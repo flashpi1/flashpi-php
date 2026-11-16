@@ -72,6 +72,11 @@ Resumen de la consola (hasta 50 comprobantes al día). Más en
 [Sandbox y emisor demo](https://flashpi.com.ec/docs/sandbox/).
 
 Crea un cliente y reutilízalo (en Laravel, regístralo como singleton en un service provider).
+En Laravel 12.71 o superior, o 13.40 o superior,
+[flashpi/flashpi-laravel](https://github.com/flashpi1/flashpi-laravel/blob/main/README.md) lo
+hace por ti: arma el cliente desde `config/flashpi.php` y agrega una facade, comandos de Artisan
+y una ruta lista para los webhooks que lanza eventos tipados. La forma manual que describe este
+README sigue sirviendo (por ejemplo, en Laravel 11).
 
 ## Análisis estático
 
@@ -286,6 +291,11 @@ final class FlashpiWebhookController
     }
 }
 ```
+
+Con [flashpi/flashpi-laravel](https://github.com/flashpi1/flashpi-laravel/blob/main/README.md#webhooks)
+(Laravel 12.71 o superior, o 13.40 o superior) no necesitas este controlador: la ruta del paquete
+verifica la firma, responde el desafío, descarta las entregas repetidas y lanza un evento de Laravel
+por cada tipo (`InvoiceAuthorized`, ...).
 
 Con Symfony:
 
