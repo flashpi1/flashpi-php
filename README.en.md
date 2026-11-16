@@ -71,6 +71,11 @@ on the console's Overview (up to 50 documents a day). See
 [Sandbox and demo issuer](https://flashpi.com.ec/docs/en/sandbox/).
 
 Create one client and reuse it (in Laravel, register it as a singleton in a service provider).
+On Laravel 12.71 or later, or 13.40 or later,
+[flashpi/flashpi-laravel](https://github.com/flashpi1/flashpi-laravel/blob/main/README.en.md)
+does it for you: it builds the client from `config/flashpi.php` and adds a facade, Artisan
+commands and a ready webhook route that dispatches typed events. The manual way this README
+describes still works (on Laravel 11, for example).
 
 ## Static analysis
 
@@ -284,6 +289,11 @@ final class FlashpiWebhookController
     }
 }
 ```
+
+With [flashpi/flashpi-laravel](https://github.com/flashpi1/flashpi-laravel/blob/main/README.en.md#webhooks)
+(Laravel 12.71 or later, or 13.40 or later) you do not need this controller: its route verifies
+the signature, answers the challenge, drops repeated deliveries and dispatches one Laravel event
+per type (`InvoiceAuthorized`, ...).
 
 With Symfony:
 
