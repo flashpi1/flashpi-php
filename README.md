@@ -293,9 +293,9 @@ final class FlashpiWebhookController
 ```
 
 Con [flashpi/flashpi-laravel](https://github.com/flashpi1/flashpi-laravel/blob/main/README.md#webhooks)
-(Laravel 12.71 o superior, o 13.40 o superior) no necesitas este controlador: su ruta verifica la
-firma, responde el desafío, descarta las entregas repetidas y lanza un evento de Laravel por cada
-tipo (`InvoiceAuthorized`, ...).
+(Laravel 12.71 o superior, o 13.40 o superior) no necesitas este controlador: la ruta del paquete
+verifica la firma, responde el desafío, descarta las entregas repetidas y lanza un evento de Laravel
+por cada tipo (`InvoiceAuthorized`, ...).
 
 Con Symfony:
 
