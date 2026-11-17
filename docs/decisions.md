@@ -9,6 +9,28 @@ an entry says otherwise. Every entry is the Flashpi product owner's: some were t
 owner, and the others were chosen while porting, after the Python SDK where the owner had not
 decided, and confirmed by the owner on 2026-11-14.
 
+## 2026-11-17: PHP 8.3
+
+The owner raised the SDK's minimum PHP version. It replaces "PHP 8.2 or later, tested on 8.2 to
+8.5" (2026-11-13, "Package and repository") and PHP 8.2 in CI ("The lowest versions on PHP 8.2 and
+8.5", 2026-11-14, and "CI", 2026-11-13).
+
+- **PHP 8.3 or later.** `"php": "^8.3"`, in place of `^8.2`: PHP 8.2's security support ends on
+  2026-12-31. When the owner chose 8.2 on 2026-11-13, the plan was to raise it to 8.3 in a later
+  minor version. It is a breaking change, committed as `feat!:` with a `BREAKING CHANGE` footer,
+  which release-please turns into 0.2.0. Apps on PHP 8.2 keep 0.1.x, which Composer picks for them
+  by their platform. The code does not change.
+- **CI on PHP 8.3 to 8.5.** The tests run on PHP 8.3, 8.4 and 8.5 with Guzzle 7 and 8; the lowest
+  versions and the archive install run on PHP 8.3 and 8.5, in place of 8.2 and 8.5. The job names
+  keep their pattern, so the new required checks are "Lowest dependencies (PHP 8.3, Guzzle 7)",
+  "Lowest dependencies (PHP 8.3, Guzzle 8)" and "Archive and install (PHP 8.3)", and those of PHP
+  8.2 go.
+- **PHPUnit 11 stays.** PHPUnit 12 needs PHP 8.3, which the SDK now requires, but the owner keeps
+  PHPUnit 11 for now: Dependabot still skips PHPUnit's major versions, now because of that choice
+  (before, because the SDK supported PHP 8.2).
+- **The Laravel package and the website follow.** `flashpi/flashpi-laravel` and the website get
+  their own changes after 0.2.0 is published; this change touches neither.
+
 ## 2026-11-14: the owner's answers
 
 The owner answered the questions the port left open and confirmed every other choice.
@@ -29,7 +51,7 @@ The owner answered the questions the port left open and confirmed every other ch
   because PHPUnit 11.5.0 printed a deprecation of its own on 8.5. With Composer's audit on, the
   lowest PHPUnit is 11.5.50, which does not, so the job runs on PHP 8.2 and 8.5, with each Guzzle
   major ("CI" below). Testing the answers found it, and the owner kept both versions. It changes
-  what CI tests, not the SDK.
+  what CI tests, not the SDK. Since 2026-11-17 the job runs on PHP 8.3 and 8.5 (above).
 - **Keep-Alive, Upgrade and Expect are refused**, as in Node, besides `Content-Length` and
   `Transfer-Encoding`: in a request's `extraHeaders` and the client's `defaultHeaders`, in any
   letter case, with the same `\InvalidArgumentException`, whose message names the header and
@@ -55,9 +77,10 @@ The owner answered the questions the port left open and confirmed every other ch
 ### The owner's decisions
 
 - **Package and repository.** `flashpi/flashpi-php` on Packagist, namespace `Flashpi\`, public
-  repository `flashpi1/flashpi-php`, MIT license held by SIGNIADIGITAL S.A. PHP 8.2 or later,
-  tested on 8.2 to 8.5. First version 0.1.0 through release-please. Packagist reads the tags from
-  GitHub: there is no upload or publish job, and the owner submits the repository to Packagist.
+  repository `flashpi1/flashpi-php`, MIT license held by SIGNIADIGITAL S.A. PHP 8.3 or later,
+  tested on 8.3 to 8.5, since 2026-11-17 (above); PHP 8.2 or later, tested on 8.2 to 8.5, before.
+  First version 0.1.0 through release-please. Packagist reads the tags from GitHub: there is no
+  upload or publish job, and the owner submits the repository to Packagist.
 - **One runtime dependency.** Guzzle, `^7.15.2 || ^8.3` since 2026-11-14, `^7.8.2 || ^8.0` before
   (Laravel 11 and 12 need 7, Laravel 13 takes both), tested on both majors. A caller can pass a
   Guzzle client of their own (`GuzzleHttp\ClientInterface`).
@@ -66,8 +89,8 @@ The owner answered the questions the port left open and confirmed every other ch
   the counterpart of Python's TypedDicts. No hydrated model classes. One synchronous client, no
   async. No Laravel integration here: it lives in the separate `flashpi/flashpi-laravel`
   (0.1.0, released 2026-11-16), which the READMEs point to.
-- **Tooling.** PHPUnit 11; PHPStan at the highest level over the library, the tests, the scripts
-  and a consumer file; PHP-CS-Fixer with the PER-CS 2.0 rule set.
+- **Tooling.** PHPUnit 11 (kept on 2026-11-17, above); PHPStan at the highest level over the
+  library, the tests, the scripts and a consumer file; PHP-CS-Fixer with the PER-CS 2.0 rule set.
 - **The Node and Python SDKs' design.** READMEs in Spanish (`README.md`) and English
   (`README.en.md`); resource style (`$flashpi->invoices->create($body)`,
   `$flashpi->documents->list([...])`, `$flashpi->issuers->establishments->create($issuerId,
@@ -295,12 +318,13 @@ The owner confirmed every one of them on 2026-11-14.
   Python's `fail_under`. The command-line entry points of `scripts/` only read their arguments
   and call those classes: `phpunit.xml.dist` leaves them out, and CI runs them as steps.
 - **CI.** `ci.yml` has Python's jobs: verify on PHP 8.5 with Guzzle 8 (`composer validate --strict`,
-  the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the tests on PHP 8.2
-  to 8.5 with Guzzle 7 and 8, PHPStan over `src` and `scripts` only with Guzzle 7 (its psr7 lacks
-  Guzzle 8's generics the test helpers use); the lowest versions with each Guzzle major (Guzzle
-  7.15.2 and 8.3.0, since 2026-11-14) on PHP 8.2 and 8.5 (on 8.2 only before 2026-11-14, above); and
-  the archive, checked by `scripts/package_check.php`, then installed in a clean project with each
-  Guzzle major on PHP 8.2 and 8.5 (`scripts/installed_check.php`). `live.yml`, `openapi-sync.yml`,
-  `release.yml` and `dependabot.yml` follow Python's, without a build or publish job: Packagist
-  reads the tags. PHP comes from `shivammathur/setup-php`, pinned by commit like every action
-  (2.40.0 since 2026-11-14).
+  the OpenAPI and README checks, PHP-CS-Fixer, PHPStan, PHPUnit with coverage); the tests on PHP 8.3
+  to 8.5 (8.2 to 8.5 before 2026-11-17, above) with Guzzle 7 and 8, PHPStan over `src` and
+  `scripts` only with Guzzle 7 (its psr7 lacks Guzzle 8's generics the test helpers use); the
+  lowest versions with each Guzzle major (Guzzle 7.15.2 and 8.3.0, since 2026-11-14) on PHP 8.3 and
+  8.5 (8.2 and 8.5 before 2026-11-17, and 8.2 only before 2026-11-14, above); and the archive,
+  checked by `scripts/package_check.php`, then installed in a clean project with each Guzzle major
+  (`scripts/installed_check.php`) on PHP 8.3 and 8.5 (8.2 and 8.5 before 2026-11-17). `live.yml`,
+  `openapi-sync.yml`, `release.yml` and `dependabot.yml` follow Python's, without a build or
+  publish job: Packagist reads the tags. PHP comes from `shivammathur/setup-php`, pinned by commit
+  like every action (2.40.0 since 2026-11-14).
