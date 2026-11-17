@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/flashpi1/flashpi-php/compare/v0.1.0...v0.2.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* PHP 8.2 is no longer supported; 0.1.x stays available for it.
+
+### Features
+
+* require PHP 8.3 ([c468b80](https://github.com/flashpi1/flashpi-php/commit/c468b8075133067d3645783da0dc664a1986eff2))
+
 ## 0.1.0 (2026-11-14)
 
 
