@@ -6,7 +6,7 @@ before changing them.
 
 ## Setup
 
-PHP 8.2 or later with the curl, mbstring and phar extensions, and
+PHP 8.3 or later with the curl, mbstring and phar extensions, and
 [Composer](https://getcomposer.org/):
 
 ```bash
@@ -39,11 +39,11 @@ composer validate --strict && composer cs && composer analyse && composer test
 - Coverage: install pcov and run `php -d pcov.directory=. vendor/bin/phpunit --coverage-text`.
   pcov only measures `src/` unless told otherwise; `pcov.directory=.` counts the scripts too. CI
   fails below 95 % of lines.
-- Static analysis needs Guzzle 8, which is what `composer install` resolves on PHP 8.2 and
+- Static analysis needs Guzzle 8, which is what `composer install` resolves on PHP 8.3 and
   later. Guzzle 7 lacks Guzzle 8's generics, which the test helpers use, and its psr7 installs a
   `getallheaders()` polyfill without a return type: with Guzzle 7 installed, analyse the library
   alone (`vendor/bin/phpstan analyse src scripts`), and `ConsumerTypesTest` skips itself.
-- CI also runs the tests on PHP 8.2 to 8.5 with Guzzle 7 and 8, and on PHP 8.2 and 8.5 with the
+- CI also runs the tests on PHP 8.3 to 8.5 with Guzzle 7 and 8, and on PHP 8.3 and 8.5 with the
   oldest versions `composer.json` allows with each Guzzle major (Guzzle 7.15.2 with psr7 2.13.0 and
   promises 2.5.1; Guzzle 8.3.0 with psr7 3.2.0 and promises 3.1.0): run
   `composer update --prefer-lowest --prefer-stable` for Guzzle 7's, or
@@ -66,7 +66,7 @@ composer validate --strict && composer cs && composer analyse && composer test
   `<?php` in a file of its own (its `use` imports first, no namespace); variables it reads before
   setting them come from `tests/Examples/Readme/Context.php`, and the reader's functions and the
   bits of Laravel and Symfony it uses are stubbed in `tests/Examples/stubs/`.
-- PHP 8.2 or later, `declare(strict_types=1)` in every file, final classes, PHPStan at level max.
+- PHP 8.3 or later, `declare(strict_types=1)` in every file, final classes, PHPStan at level max.
 - The SDK has **one runtime dependency**, Guzzle (`^7.15.2 || ^8.3`). Models are arrays with the
   API's camelCase keys, typed by the PHPStan array shapes generated from the OpenAPI document; no
   model classes.
