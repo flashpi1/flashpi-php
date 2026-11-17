@@ -19,7 +19,7 @@ updates:
       dev-dependencies:
         dependency-type: development
     ignore:
-      # PHPUnit 12 needs PHP 8.3; the SDK supports 8.2.
+      # The Flashpi owner keeps PHPUnit 11 for now (decided 2026-11-17).
       - dependency-name: phpunit/phpunit
         update-types: ['version-update:semver-major']
       # The Guzzle constraint (^7.15.2 || ^8.3) is the Flashpi owner's decision.
