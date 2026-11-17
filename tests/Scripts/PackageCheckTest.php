@@ -63,7 +63,7 @@ final class PackageCheckTest extends TestCase
         self::assertSame([
             'composer.json must name flashpi/flashpi-php',
             'composer.json must carry no version: Packagist takes it from the tag',
-            'composer.json must require {"php":"^8.2","ext-json":"*","guzzlehttp/guzzle":"^7.15.2 || ^8.3"} only',
+            'composer.json must require {"php":"^8.3","ext-json":"*","guzzlehttp/guzzle":"^7.15.2 || ^8.3"} only',
             'composer.json must autoload Flashpi\\ from src/ only',
         ], Archive::problems([...self::files(), 'composer.json' => (string) json_encode($composer)], self::SOURCES));
         self::assertSame(['composer.json is not a JSON object'], Archive::problems([...self::files(), 'composer.json' => 'null'], self::SOURCES));
@@ -133,7 +133,7 @@ final class PackageCheckTest extends TestCase
     {
         return [
             'name' => 'flashpi/flashpi-php',
-            'require' => ['php' => '^8.2', 'ext-json' => '*', 'guzzlehttp/guzzle' => '^7.15.2 || ^8.3'],
+            'require' => ['php' => '^8.3', 'ext-json' => '*', 'guzzlehttp/guzzle' => '^7.15.2 || ^8.3'],
             'autoload' => ['psr-4' => ['Flashpi\\' => 'src/']],
         ];
     }
