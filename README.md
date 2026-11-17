@@ -15,7 +15,7 @@ Ecuador, para PHP.
 - Paginación automática con `foreach`.
 - Verificación de firmas de webhooks (Standard Webhooks) para Laravel, Symfony o PHP sin
   framework.
-- PHP 8.2 o superior. Una sola dependencia: [Guzzle](https://docs.guzzlephp.org/) 7.15.2 o
+- PHP 8.3 o superior. Una sola dependencia: [Guzzle](https://docs.guzzlephp.org/) 7.15.2 o
   superior, u 8.3 o superior (Laravel 11, 12 y 13).
 
 ## Instalación
