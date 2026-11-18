@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/flashpi1/flashpi-php/compare/v0.2.0...v0.3.0) (2026-11-18)
+
+
+### Features
+
+* **types:** let the last payment leave out its amount ([049fbf9](https://github.com/flashpi1/flashpi-php/commit/049fbf96acac99489dedf51061ceaba30d3bb6b4))
+
 ## [0.2.0](https://github.com/flashpi1/flashpi-php/compare/v0.1.0...v0.2.0) (2026-11-17)
 
 
