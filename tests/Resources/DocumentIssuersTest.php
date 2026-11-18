@@ -115,6 +115,46 @@ final class DocumentIssuersTest extends TestCase
         self::assertSame('[1,2]', (string) $api->request(0)->getBody());
     }
 
+    /**
+     * The last payment may leave out `amount`, and Flashpi gives it what the other payments leave
+     * of the total: the typed bodies accept it (PHPStan analyses this file) and the SDK sends the
+     * payment without the key.
+     */
+    public function testSendsALastPaymentWithoutAnAmountAsItIs(): void
+    {
+        $api = self::api([Replies::json(Replies::document(), 202), Replies::json(Replies::document(), 202)]);
+        $api->client->invoices->create([
+            'issuerId' => 'iss_1',
+            'establishment' => '001',
+            'emissionPoint' => '001',
+            'customer' => ['idType' => 'final_consumer'],
+            'items' => [['description' => 'Pan de yuca', 'quantity' => '40', 'unitPrice' => '0.50', 'taxes' => [['type' => 'vat', 'rate' => '15']]]],
+            'payments' => [['method' => 'credit_card', 'amount' => '10.00'], ['method' => 'cash']],
+        ]);
+        $api->client->withholdings->create([
+            'issuerId' => 'iss_1',
+            'establishment' => '001',
+            'emissionPoint' => '001',
+            'subject' => ['idType' => 'ruc', 'id' => '1760013210001', 'name' => 'PRUEBAS SERVICIO DE RENTAS INTERNAS', 'relatedParty' => false],
+            'supportingDocuments' => [[
+                'taxSupportCode' => '01',
+                'documentTypeCode' => '01',
+                'number' => '001-001-000000001',
+                'issueDate' => '2026-11-18',
+                'subtotal' => '100.00',
+                'total' => '115.00',
+                'taxes' => [['type' => 'vat', 'rate' => '15', 'taxableBase' => '100.00']],
+                'withholdings' => [['tax' => 'income_tax', 'code' => '312', 'taxableBase' => '100.00']],
+                'payments' => [['method' => 'other_financial_system']],
+            ]],
+        ]);
+        self::assertStringContainsString(
+            '"payments":[{"method":"credit_card","amount":"10.00"},{"method":"cash"}]',
+            (string) $api->request(0)->getBody(),
+        );
+        self::assertStringContainsString('"payments":[{"method":"other_financial_system"}]', (string) $api->request(1)->getBody());
+    }
+
     #[DataProvider('documentTypes')]
     public function testReturnsTheDocumentAnEarlierAttemptCreated(string $resource, string $path): void
     {

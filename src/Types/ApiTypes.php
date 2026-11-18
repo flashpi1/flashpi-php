@@ -389,7 +389,7 @@ namespace Flashpi\Types;
  * @phpstan-type DocumentPartyIdType 'ruc'|'cedula'|'passport'|'final_consumer'|'foreign_id'
  * @phpstan-type DocumentPayment array{
  *     method: DocumentPaymentMethod,
- *     amount: string,
+ *     amount?: string,
  *     term?: string,
  *     termUnit?: DocumentPaymentTermUnit,
  * }
@@ -647,6 +647,7 @@ namespace Flashpi\Types;
  *     |'too_many_additional_fields'
  *     |'reserved_name'
  *     |'amount_mismatch'
+ *     |'zero_payment'
  *     |'future_date'
  *     |'date_too_early'
  *     |'date_too_late'
@@ -1204,7 +1205,7 @@ namespace Flashpi\Types;
  * @phpstan-type WithholdingForeignPaymentRegime 'general'|'tax_haven'|'preferential'
  * @phpstan-type WithholdingPayment array{
  *     method: WithholdingPaymentMethod,
- *     amount: string,
+ *     amount?: string,
  * }
  * @phpstan-type WithholdingPaymentMethod 'cash'
  *     |'debt_offset'
