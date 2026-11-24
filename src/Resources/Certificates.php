@@ -30,7 +30,8 @@ final class Certificates extends Resource
      * Flashpi checks it in the background: the certificate starts `processing`, then becomes
      * `accepted` (event `certificate.verified`, or `certificate.pending` while its revocation
      * status cannot be checked) or `rejected` (no event: follow it with get() and read
-     * `rejection`).
+     * `rejection`). An accepted certificate lists what to fix in `warnings`: `ruc_mismatch` is a
+     * test certificate that is not for the issuer's RUC, which signs test documents only.
      *
      * ```php
      * $flashpi->issuers->certificates->upload($issuerId, [

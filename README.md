@@ -400,7 +400,9 @@ Para **renovar la firma** de un emisor, para pruebas y producción a la vez, rep
 flujo con el .p12 nuevo: Flashpi reconoce el RUC (`existingIssuer`) y `complete()` sin datos
 agrega el certificado. En cambio,
 `$flashpi->issuers->certificates->upload($issuerId, ['file' => ..., 'password' => ...])` sube un
-certificado solo para el modo de la clave que usas (pruebas o producción).
+certificado solo para el modo de la clave que usas (pruebas o producción). Un certificado aceptado
+lista en `warnings` lo que conviene corregir: `ruc_mismatch` es un certificado de pruebas que no es
+del RUC del emisor, y solo firma documentos de prueba.
 
 ## Opciones
 

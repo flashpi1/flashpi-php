@@ -398,7 +398,9 @@ To **renew an issuer's signature** for test and live mode at once, run the same 
 new .p12: Flashpi recognizes the RUC (`existingIssuer`) and `complete()` with no data adds the
 certificate. Instead,
 `$flashpi->issuers->certificates->upload($issuerId, ['file' => ..., 'password' => ...])` uploads
-a certificate for the mode of the key you use only (test or live).
+a certificate for the mode of the key you use only (test or live). An accepted certificate lists
+what to fix in `warnings`: `ruc_mismatch` is a test certificate that is not for the issuer's RUC,
+which signs test documents only.
 
 ## Options
 
