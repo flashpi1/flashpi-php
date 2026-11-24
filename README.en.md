@@ -346,7 +346,9 @@ endpoint uses `thin` mode (no `data`), type the result as `ThinWebhookEvent`
 
 ## Issuers and certificates
 
-These operations need an account-wide key with read and write access.
+These operations need an account-wide key with read and write access. Once an issuer has live
+documents, changing it (its data, establishments, emission points or signature) also needs an
+`fp_live_` key: with an `fp_test_` one, the API answers 403 `live_key_required`.
 
 An issuer starts from its electronic signature (.p12): Flashpi checks it, reads the RUC and asks
 the SRI, and returns a `prefill` with what it found so you can build the issuer.

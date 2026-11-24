@@ -83,6 +83,8 @@ final class IssuerOnboardings extends Resource
      *   certificate is added to that issuer for both modes (a renewal) and the issuer is left as
      *   it is.
      * - Send `ruc` when `$onboarding['rucNeedsConfirmation']` is true.
+     * - A test key (`fp_test_`) renews only an issuer without live documents: otherwise the API
+     *   answers 403 `live_key_required`.
      *
      * @param CompleteIssuerOnboarding|null $body
      * @param RequestOptions $options

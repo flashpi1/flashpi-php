@@ -347,7 +347,10 @@ el evento con `$flashpi->events->get($event['id'])`.
 
 ## Emisores y certificados
 
-Estas operaciones necesitan una clave de toda la cuenta con acceso de lectura y escritura.
+Estas operaciones necesitan una clave de toda la cuenta con acceso de lectura y escritura. Cuando
+un emisor ya tiene documentos de producción, cambiarlo (sus datos, establecimientos, puntos de
+emisión o su firma) necesita además una clave `fp_live_`: con una `fp_test_`, la API responde 403
+`live_key_required`.
 
 Un emisor nace de su firma electrónica (.p12): Flashpi la verifica, lee el RUC y consulta al SRI,
 y te devuelve un `prefill` con lo que encontró para que armes el emisor.
