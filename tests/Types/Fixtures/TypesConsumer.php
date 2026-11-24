@@ -11,9 +11,12 @@ use Flashpi\Types\SdkTypes;
  * Code written the way a consumer of the SDK writes it. PHPStan analyses it with the rest of the
  * tests, at level max: all of it must pass. Its counterpart, Invalid/TypesMisuse.php, must not.
  *
+ * @phpstan-import-type Certificate from ApiTypes
  * @phpstan-import-type CreateInvoice from ApiTypes
  * @phpstan-import-type Document from ApiTypes
+ * @phpstan-import-type ErrorCode from ApiTypes
  * @phpstan-import-type FieldError from ApiTypes
+ * @phpstan-import-type FieldErrorCode from ApiTypes
  * @phpstan-import-type DocumentListParams from SdkTypes
  * @phpstan-import-type Problem from SdkTypes
  * @phpstan-import-type RequestOptions from SdkTypes
@@ -120,5 +123,59 @@ final class TypesConsumer
     public static function fields(array $errors): array
     {
         return array_map(static fn(array $error): string => "{$error['field']}: {$error['code']}", $errors);
+    }
+
+    /**
+     * @param Certificate $certificate
+     *
+     * @return list<string>
+     */
+    public static function warnings(array $certificate): array
+    {
+        return array_map(
+            static fn(array $warning): string => match ($warning['code']) {
+                'ruc_mismatch' => "Test documents only: {$warning['message']}",
+            },
+            $certificate['warnings'],
+        );
+    }
+
+    /**
+     * @param Document $document
+     */
+    public static function failure(array $document): ?string
+    {
+        return match ($document['failure']['code'] ?? null) {
+            'certificate_ruc_mismatch' => "Upload a certificate of the issuer's RUC.",
+            'sri_authorization_mismatch' => 'The SRI authorized another document: contact support.',
+            default => null,
+        };
+    }
+
+    /**
+     * The codes the API lists are named in ErrorCode and FieldErrorCode, besides being open.
+     *
+     * @param ErrorCode $code
+     */
+    public static function advice(string $code): ?string
+    {
+        return match ($code) {
+            'live_key_required' => 'The issuer has live documents: use an fp_live_ key.',
+            'webhook_endpoint_limit_reached' => 'Delete a webhook endpoint first.',
+            default => null,
+        };
+    }
+
+    /**
+     * @param FieldErrorCode $code
+     */
+    public static function fieldAdvice(string $code): ?string
+    {
+        return match ($code) {
+            'demo_issuer_free_text_not_allowed' => 'Leave out the additional fields with the demo issuer.',
+            'demo_issuer_description_too_long' => 'Keep descriptions to 291 characters with the demo issuer.',
+            'certificate_ruc_missing' => 'Use a certificate that states the RUC or the cédula.',
+            default => null,
+        };
     }
 }
