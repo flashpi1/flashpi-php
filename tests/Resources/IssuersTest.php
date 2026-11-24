@@ -6,6 +6,7 @@ namespace Flashpi\Tests\Resources;
 
 use Flashpi\ApiResponse;
 use Flashpi\Exception\FlashpiException;
+use Flashpi\Exception\PermissionDeniedException;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\TestCase;
 use GuzzleHttp\Psr7\Response;
@@ -118,6 +119,24 @@ final class IssuersTest extends TestCase
         $point = $api->client->issuers->establishments->emissionPoints->get(self::ISSUER, self::ESTABLISHMENT, self::POINT);
         self::assertSame('001', $point['code']);
         self::assertSame([], $api->client->issuers->__debugInfo());
+    }
+
+    public function testReadsTheWarningsOfAnAcceptedCertificate(): void
+    {
+        $warning = ['code' => 'ruc_mismatch', 'message' => "This certificate is not for the issuer's RUC: it signs test documents only."];
+        $api = self::api([Replies::json(['id' => self::CERTIFICATE, 'status' => 'accepted', 'warnings' => [$warning]])]);
+        $certificate = $api->client->issuers->certificates->get(self::ISSUER, self::CERTIFICATE);
+        self::assertSame([$warning], $certificate['warnings']);
+        self::assertSame(['ruc_mismatch'], array_column($certificate['warnings'], 'code'));
+    }
+
+    public function testRaisesLiveKeyRequiredAsPermissionDenied(): void
+    {
+        $api = self::api([Replies::problem(403, 'live_key_required')]);
+        $error = self::throws(PermissionDeniedException::class, static fn() => $api->client->issuers->update(self::ISSUER, ['tradeName' => 'X']));
+        self::assertSame('live_key_required', $error->errorCode);
+        self::assertSame(403, $error->status);
+        self::assertCount(1, $api->sent);
     }
 
     public function testRefusesAMissingIdBeforeSendingAnything(): void
