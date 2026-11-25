@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/flashpi1/flashpi-php/compare/v0.3.0...v0.3.1) (2026-11-25)
+
+
+### Bug fixes
+
+* **types:** type the certificate warnings and the API's new codes ([a818511](https://github.com/flashpi1/flashpi-php/commit/a81851168eb43feb571ef4f162a63759885ea75c))
+
 ## [0.3.0](https://github.com/flashpi1/flashpi-php/compare/v0.2.0...v0.3.0) (2026-11-18)
 
 
