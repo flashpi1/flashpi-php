@@ -346,7 +346,9 @@ endpoint uses `thin` mode (no `data`), type the result as `ThinWebhookEvent`
 
 ## Issuers and certificates
 
-These operations need an account-wide key with read and write access.
+These operations need an account-wide key with read and write access. Once an issuer has live
+documents, changing it (its data, establishments, emission points or signature) also needs an
+`fp_live_` key: with an `fp_test_` one, the API answers 403 `live_key_required`.
 
 An issuer starts from its electronic signature (.p12): Flashpi checks it, reads the RUC and asks
 the SRI, and returns a `prefill` with what it found so you can build the issuer.
@@ -396,7 +398,9 @@ To **renew an issuer's signature** for test and live mode at once, run the same 
 new .p12: Flashpi recognizes the RUC (`existingIssuer`) and `complete()` with no data adds the
 certificate. Instead,
 `$flashpi->issuers->certificates->upload($issuerId, ['file' => ..., 'password' => ...])` uploads
-a certificate for the mode of the key you use only (test or live).
+a certificate for the mode of the key you use only (test or live). An accepted certificate lists
+what to fix in `warnings`: `ruc_mismatch` is a test certificate that is not for the issuer's RUC,
+which signs test documents only.
 
 ## Options
 

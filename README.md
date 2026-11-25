@@ -347,7 +347,10 @@ el evento con `$flashpi->events->get($event['id'])`.
 
 ## Emisores y certificados
 
-Estas operaciones necesitan una clave de toda la cuenta con acceso de lectura y escritura.
+Estas operaciones necesitan una clave de toda la cuenta con acceso de lectura y escritura. Cuando
+un emisor ya tiene documentos de producción, cambiarlo (sus datos, establecimientos, puntos de
+emisión o su firma) necesita además una clave `fp_live_`: con una `fp_test_`, la API responde 403
+`live_key_required`.
 
 Un emisor nace de su firma electrónica (.p12): Flashpi la verifica, lee el RUC y consulta al SRI,
 y te devuelve un `prefill` con lo que encontró para que armes el emisor.
@@ -397,7 +400,9 @@ Para **renovar la firma** de un emisor, para pruebas y producción a la vez, rep
 flujo con el .p12 nuevo: Flashpi reconoce el RUC (`existingIssuer`) y `complete()` sin datos
 agrega el certificado. En cambio,
 `$flashpi->issuers->certificates->upload($issuerId, ['file' => ..., 'password' => ...])` sube un
-certificado solo para el modo de la clave que usas (pruebas o producción).
+certificado solo para el modo de la clave que usas (pruebas o producción). Un certificado aceptado
+lista en `warnings` lo que conviene corregir: `ruc_mismatch` es un certificado de pruebas que no es
+del RUC del emisor, y solo firma documentos de prueba.
 
 ## Opciones
 

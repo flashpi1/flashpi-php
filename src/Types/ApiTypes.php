@@ -56,6 +56,7 @@ namespace Flashpi\Types;
  *     ruc: string|null,
  *     revocation: CertificateRevocation|null,
  *     rejection: CertificateRejection|null,
+ *     warnings: list<CertificateWarning>,
  *     createdAt: string,
  *     updatedAt: string,
  * }
@@ -92,6 +93,11 @@ namespace Flashpi\Types;
  *     |'untrusted_certificate_chain'
  * @phpstan-type CertificateRevocationStatus 'good'|'pending'|'blocked'|'revoked'
  * @phpstan-type CertificateStatus 'processing'|'accepted'|'rejected'
+ * @phpstan-type CertificateWarning array{
+ *     code: CertificateWarningCode,
+ *     message: string,
+ * }
+ * @phpstan-type CertificateWarningCode 'ruc_mismatch'
  * @phpstan-type CertificatesListQuery array{
  *     limit?: int,
  *     cursor?: string,
@@ -352,6 +358,7 @@ namespace Flashpi\Types;
  *     |'certificate_blocked'
  *     |'certificate_revoked'
  *     |'certificate_unusable'
+ *     |'certificate_ruc_mismatch'
  *     |'document_too_large'
  *     |'document_invalid'
  *     |'signing_failed'
@@ -359,6 +366,7 @@ namespace Flashpi\Types;
  *     |'sri_authorization_timeout'
  *     |'sri_request_refused'
  *     |'sri_environment_mismatch'
+ *     |'sri_authorization_mismatch'
  * @phpstan-type DocumentItem array{
  *     code?: string,
  *     auxiliaryCode?: string,
@@ -502,6 +510,7 @@ namespace Flashpi\Types;
  *     |'key_scope_mismatch'
  *     |'key_read_only'
  *     |'ip_not_allowed'
+ *     |'live_key_required'
  *     |'invalid_idempotency_key'
  *     |'idempotency_key_reused'
  *     |'idempotency_key_in_progress'
@@ -531,6 +540,7 @@ namespace Flashpi\Types;
  *     |'webhook_endpoint_already_verified'
  *     |'webhook_endpoint_not_verified'
  *     |'webhook_delivery_in_progress'
+ *     |'webhook_endpoint_limit_reached'
  *     |'sandbox_not_enabled'
  *     |'demo_issuer_quota_exceeded'
  *     |'demo_issuer_unavailable'
@@ -660,7 +670,10 @@ namespace Flashpi\Types;
  *     |'url_not_allowed'
  *     |'demo_issuer_test_only'
  *     |'demo_issuer_sequential_not_allowed'
+ *     |'demo_issuer_free_text_not_allowed'
+ *     |'demo_issuer_description_too_long'
  *     |'ruc_mismatch'
+ *     |'certificate_ruc_missing'
  * @phpstan-type Issuer array{
  *     id: string,
  *     ruc: string,

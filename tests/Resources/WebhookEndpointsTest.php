@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Flashpi\Tests\Resources;
 
 use Flashpi\ApiResponse;
+use Flashpi\Exception\ConflictException;
+use Flashpi\Exception\RateLimitException;
 use Flashpi\Tests\Support\Replies;
 use Flashpi\Tests\Support\TestCase;
 use GuzzleHttp\Psr7\Response;
@@ -73,6 +75,40 @@ final class WebhookEndpointsTest extends TestCase
         self::assertInstanceOf(ApiResponse::class, $result);
         self::assertSame($reply->getStatusCode(), $result->response->getStatusCode());
         self::assertSame($path, $api->request(0)->getUri()->getPath());
+    }
+
+    public function testRaisesTheLimitOfEndpointsAsAConflictWithoutRetrying(): void
+    {
+        $api = self::api([Replies::problem(409, 'webhook_endpoint_limit_reached', ['limit' => 20])]);
+        $error = self::throws(ConflictException::class, static fn() => $api->client->webhookEndpoints->create(['url' => 'https://x', 'enabledEvents' => ['invoice.authorized']]));
+        self::assertSame('webhook_endpoint_limit_reached', $error->errorCode);
+        self::assertSame(20, $error->problem['limit'] ?? null);
+        self::assertCount(1, $api->sent);
+    }
+
+    /**
+     * The calls that start a verification, which the API limits per endpoint and hour.
+     *
+     * @return iterable<string, array{string, list<mixed>}>
+     */
+    public static function verifications(): iterable
+    {
+        yield 'update with a new URL' => ['webhookEndpoints.update', [self::ENDPOINT, ['url' => 'https://y']]];
+        yield 'verify' => ['webhookEndpoints.verify', [self::ENDPOINT]];
+    }
+
+    /**
+     * @param list<mixed> $arguments
+     */
+    #[DataProvider('verifications')]
+    public function testRaisesTheHourlyLimitOfVerificationsWithoutWaitingForIt(string $name, array $arguments): void
+    {
+        $api = self::api([Replies::problem(429, 'rate_limited', [], ['Retry-After' => '1800'])]);
+        $error = self::throws(RateLimitException::class, static fn() => $api->op($name, ...$arguments));
+        self::assertSame('rate_limited', $error->errorCode);
+        self::assertSame(1800, $error->retryAfter());
+        self::assertCount(1, $api->sent);
+        self::assertSame(0.0, $api->clock->elapsed());
     }
 
     public function testReadsTheSigningSecret(): void
